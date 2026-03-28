@@ -9,14 +9,13 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script>
-        tailwind.config = { theme: { extend: { colors: { spark: { dark: '#020617', blue: '#0066FF', cyan: '#00F0FF', green: '#10B981' } } } } }
+        tailwind.config = { theme: { extend: { colors: { spark: { dark: '#020617', blue: '#0066FF', cyan: '#00F0FF', green: '#10B981', gold: '#FBBF24' } } } } }
     </script>
     <style>
-        body { background-color: #020617; color: #f8fafc; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        body { background-color: #020617; color: #f8fafc; font-family: 'Inter', sans-serif; }
         .glass { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); backdrop-filter: blur(12px); }
         .spark-gradient { background: linear-gradient(90deg, #0066FF 0%, #00F0FF 100%); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        input::placeholder { color: rgba(255,255,255,0.1); }
     </style>
 </head>
 <body>
@@ -26,21 +25,21 @@
 
         function App() {
             const [transacoes, setTransacoes] = useState(() => {
-                const salvo = localStorage.getItem('spark_db_v3');
+                const salvo = localStorage.getItem('spark_db_v4');
                 return salvo ? JSON.parse(salvo) : [];
             });
             
             const [valor, setValor] = useState('');
-            const [categoria, setCategoria] = useState('Geral');
+            const [categoria, setCategoria] = useState('Alimentação');
             const [metodo, setMetodo] = useState('Pix');
             const [nota, setNota] = useState('');
             const limite = 1200;
 
-            const categorias = ["Geral", "Alimentação", "Transporte", "Lazer", "Juh Modas", "Saúde"];
+            const categorias = ["Alimentação", "Lazer", "Fatura", "Transporte", "Saúde", "Investimento"];
             const metodos = ["Pix", "Débito", "Crédito", "Dinheiro"];
 
             useEffect(() => {
-                localStorage.setItem('spark_db_v3', JSON.stringify(transacoes));
+                localStorage.setItem('spark_db_v4', JSON.stringify(transacoes));
             }, [transacoes]);
 
             const entradas = transacoes.reduce((acc, t) => t.tipo === 'entrada' ? acc + t.valor : acc, 0);
@@ -56,7 +55,7 @@
                     tipo, 
                     categoria, 
                     metodo,
-                    nota: nota || (tipo === 'entrada' ? 'Recebimento' : 'Compra s/ nota'),
+                    nota: nota || (tipo === 'entrada' ? 'Recebimento' : `Gasto em ${categoria}`),
                     data: new Date().toLocaleDateString('pt-BR') 
                 };
                 setTransacoes([nova, ...transacoes]);
@@ -64,54 +63,43 @@
                 setNota('');
             };
 
+            const getCorCategoria = (cat) => {
+                if (cat === 'Investimento') return 'text-spark-gold';
+                if (cat === 'Fatura') return 'text-red-400';
+                return 'text-white/30';
+            };
+
             return (
                 <div className="min-h-screen p-4 md:p-8 max-w-2xl mx-auto pb-20">
-                    {/* Header com Saldo Disponível */}
-                    <div className="flex justify-between items-center mb-10">
+                    <div className="flex justify-between items-center mb-10 px-2">
                         <div className="flex gap-3">
                             <img src="assets/logo.png" className="w-12 h-12" onError={(e) => e.target.src='https://via.placeholder.com/48/0066FF/FFFFFF?text=S'}/>
                             <img src="assets/texto-spark.png" className="h-5 mt-4" onError={(e) => e.target.src='https://via.placeholder.com/100/00F0FF/000000?text=SPARK'}/>
                         </div>
                         <div className="text-right">
-                            <p className="text-[9px] text-white/30 uppercase font-black tracking-[0.2em]">Saldo Real</p>
-                            <p className={`text-2xl font-black italic ${saldo >= 0 ? 'text-spark-green' : 'text-red-500'}`}>
-                                R$ {saldo.toLocaleString('pt-BR')}
-                            </p>
+                            <p className="text-[9px] text-white/30 uppercase font-black tracking-widest">Saldo Real</p>
+                            <p className={`text-2xl font-black italic ${saldo >= 0 ? 'text-spark-green' : 'text-red-500'}`}>R$ {saldo.toLocaleString('pt-BR')}</p>
                         </div>
                     </div>
 
-                    {/* Dashboard Progress */}
-                    <div className="glass rounded-[2.5rem] p-8 mb-6 border-white/5 shadow-2xl">
+                    <div className="glass rounded-[2.5rem] p-8 mb-6 border-white/5">
                         <div className="flex justify-between items-end mb-5">
                             <div>
-                                <h3 className="text-spark-blue text-[10px] font-black uppercase tracking-widest mb-1 italic">Consumo do Ciclo</h3>
-                                <p className="text-4xl font-black tracking-tighter text-white">R$ {saidas.toLocaleString('pt-BR')}</p>
+                                <h3 className="text-spark-blue text-[10px] font-black uppercase tracking-widest mb-1 italic">Tanque de Gastos</h3>
+                                <p className="text-4xl font-black italic">R$ {saidas.toLocaleString('pt-BR')}</p>
                             </div>
-                            <div className="text-right">
-                                <span className="text-spark-cyan font-black text-2xl italic">{porcentagem}%</span>
-                            </div>
+                            <span className="text-spark-cyan font-black text-2xl italic">{porcentagem}%</span>
                         </div>
-                        <div className="h-2.5 w-full bg-white/5 rounded-full overflow-hidden p-[2px] border border-white/5">
-                            <div className="h-full spark-gradient rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(0,102,255,0.5)]" style={{ width: `${porcentagem}%` }}></div>
+                        <div className="h-2.5 w-full bg-white/5 rounded-full p-[2px] border border-white/5 overflow-hidden">
+                            <div className="h-full spark-gradient rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(0,102,255,0.4)]" style={{ width: `${porcentagem}%` }}></div>
                         </div>
                     </div>
 
-                    {/* Central de Operações */}
-                    <div className="glass rounded-[2.5rem] p-6 mb-8 border-spark-blue/20 shadow-inner">
-                        <input 
-                            type="number" value={valor} onChange={(e) => setValor(e.target.value)}
-                            placeholder="0.00" 
-                            className="w-full bg-transparent text-center text-6xl font-black text-white outline-none mb-6 placeholder:opacity-5"
-                        />
-                        
-                        <input 
-                            type="text" value={nota} onChange={(e) => setNota(e.target.value)}
-                            placeholder="Descrição da Transação (Opcional)"
-                            className="w-full bg-white/5 border border-white/5 rounded-xl p-4 mb-6 text-center text-sm font-bold outline-none focus:border-spark-blue transition-all"
-                        />
+                    <div className="glass rounded-[2.5rem] p-6 mb-8 border-spark-blue/20">
+                        <input type="number" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="0.00" className="w-full bg-transparent text-center text-6xl font-black text-white outline-none mb-6"/>
+                        <input type="text" value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Descrição (Opcional)" className="w-full bg-white/5 border border-white/5 rounded-xl p-4 mb-6 text-center text-sm font-bold outline-none"/>
 
-                        {/* Seletor de Categoria */}
-                        <p className="text-[10px] font-black uppercase text-white/20 mb-3 ml-2 italic">Categoria</p>
+                        <p className="text-[10px] font-black uppercase text-white/20 mb-3 ml-2 italic">Categorias Oficiais</p>
                         <div className="flex gap-2 overflow-x-auto pb-4 mb-6 no-scrollbar">
                             {categorias.map(cat => (
                                 <button key={cat} onClick={() => setCategoria(cat)}
@@ -121,8 +109,7 @@
                             ))}
                         </div>
 
-                        {/* Seletor de Pagamento */}
-                        <p className="text-[10px] font-black uppercase text-white/20 mb-3 ml-2 italic">Método</p>
+                        <p className="text-[10px] font-black uppercase text-white/20 mb-3 ml-2 italic">Método de Operação</p>
                         <div className="flex gap-2 mb-8">
                             {metodos.map(m => (
                                 <button key={m} onClick={() => setMetodo(m)}
@@ -133,30 +120,26 @@
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
-                            <button onClick={() => lancar('saida')} className="bg-spark-blue py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:brightness-125 transition-all active:scale-95 shadow-lg shadow-spark-blue/20">Registrar Saída</button>
-                            <button onClick={() => lancar('entrada')} className="border border-spark-green/40 text-spark-green py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-spark-green/10 transition-all active:scale-95">Registrar Entrada</button>
+                            <button onClick={() => lancar('saida')} className="bg-spark-blue py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:brightness-110 active:scale-95 shadow-lg shadow-spark-blue/20">Gasto</button>
+                            <button onClick={() => lancar('entrada')} className="border border-spark-green/40 text-spark-green py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-spark-green/10 active:scale-95">Receita</button>
                         </div>
                     </div>
 
-                    {/* Histórico Alpha */}
                     <div className="space-y-4">
-                        <div className="flex justify-between items-center px-4 mb-4">
-                            <h4 className="text-[10px] font-black uppercase text-white/20 tracking-[0.3em]">Log de Atividades</h4>
-                            <button onClick={() => {if(confirm('Zerar?')) setTransacoes([])}} className="text-[10px] font-bold text-red-500/50 uppercase">Limpar Tudo</button>
-                        </div>
+                        <h4 className="text-[10px] font-black uppercase text-white/20 tracking-[0.3em] ml-4">Histórico de Operações</h4>
                         {transacoes.map(t => (
-                            <div key={t.id} className="glass p-5 rounded-[1.5rem] flex justify-between items-center border-l-4 transition-all" style={{ borderLeftColor: t.tipo === 'entrada' ? '#10B981' : '#0066FF' }}>
+                            <div key={t.id} className="glass p-5 rounded-[1.5rem] flex justify-between items-center border-l-4" style={{ borderLeftColor: t.tipo === 'entrada' ? '#10B981' : (t.categoria === 'Investimento' ? '#FBBF24' : '#0066FF') }}>
                                 <div className="flex flex-col gap-1">
                                     <div className="flex items-center gap-2">
-                                        <span className="text-[9px] font-black text-white/20 uppercase tracking-widest">{t.categoria}</span>
+                                        <span className={`text-[9px] font-black uppercase tracking-widest ${getCorCategoria(t.categoria)}`}>{t.categoria}</span>
                                         <span className="w-1 h-1 bg-white/10 rounded-full"></span>
                                         <span className="text-[9px] font-black text-spark-cyan/60 uppercase italic">{t.metodo}</span>
                                     </div>
                                     <p className="text-sm font-bold text-white/90">{t.nota}</p>
-                                    <p className="text-[10px] font-medium text-white/20">{t.data}</p>
+                                    <p className="text-[10px] font-medium text-white/10">{t.data}</p>
                                 </div>
                                 <div className="text-right">
-                                    <p className={`text-lg font-black italic ${t.tipo === 'entrada' ? 'text-spark-green' : 'text-white'}`}>
+                                    <p className={`text-lg font-black italic ${t.tipo === 'entrada' ? 'text-spark-green' : (t.categoria === 'Investimento' ? 'text-spark-gold' : 'text-white')}`}>
                                         {t.tipo === 'entrada' ? '+' : '-'} R$ {t.valor.toLocaleString('pt-BR')}
                                     </p>
                                 </div>
