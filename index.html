@@ -26,8 +26,9 @@
         }
     </script>
     <style>
-        body { background-color: #050B18; color: #E2E8F0; }
-        .neon-border { box-shadow: 0 0 15px rgba(0, 240, 255, 0.4); }
+        body { background-color: #050B18; color: #E2E8F0; overflow-x: hidden; }
+        .neon-glow { box-shadow: 0 0 20px rgba(0, 240, 255, 0.6); }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); }
     </style>
 </head>
 <body>
@@ -37,49 +38,88 @@
         const { useState } = React;
 
         function App() {
-            const [gasto, setGasto] = useState(650);
+            const [gastoTotal, setGastoTotal] = useState(650);
+            const [novoGasto, setNovoGasto] = useState('');
             const limite = 1200;
             
-            // Cálculo mestre: (Gasto / Limite) * 100
-            const porcentagem = Math.round((gasto / limite) * 100);
+            // Cálculo da porcentagem seguindo a ordem do Senhor: (Gasto / Limite) * 100
+            const porcentagem = Math.min(Math.round((gastoTotal / limite) * 100), 100);
+
+            const adicionarGasto = (e) => {
+                e.preventDefault();
+                if (novoGasto > 0) {
+                    setGastoTotal(prev => prev + parseFloat(novoGasto));
+                    setNovoGasto('');
+                }
+            };
 
             return (
-                <div className="min-h-screen p-6 md:p-12 font-sans">
-                    <header className="flex flex-col mb-16">
-                        <div className="flex items-center gap-4">
-                            {/* Caminho das imagens que o Senhor vai subir no Github */}
-                            <img src="assets/logo.png" alt="S" className="w-16 h-16 object-contain" />
-                            <img src="assets/texto-spark.png" alt="SPARK" className="h-10 object-contain" />
+                <div className="min-h-screen p-6 md:p-12 font-sans max-w-6xl mx-auto">
+                    {/* Header com Logos do Senhor */}
+                    <header className="flex flex-col mb-12 animate-fadeIn">
+                        <div className="flex items-center gap-6">
+                            <img src="assets/logo.png" alt="S" className="w-20 h-20 object-contain drop-shadow-[0_0_10px_rgba(0,102,255,0.5)]" />
+                            <img src="assets/texto-spark.png" alt="SPARK" className="h-12 object-contain" />
                         </div>
-                        <p className="text-spark-blue text-[10px] uppercase tracking-[0.5em] mt-4 font-bold ml-2">
+                        <p className="text-spark-blue text-[10px] uppercase tracking-[0.5em] mt-4 font-black ml-2 opacity-80">
                             High Performance Finance
                         </p>
                     </header>
 
-                    <main className="max-w-4xl">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            {/* Card de Meta */}
-                            <div className="bg-white/5 border border-white/10 p-8 rounded-[2rem] backdrop-blur-md relative overflow-hidden">
-                                <h2 className="text-xs text-spark-blue font-black uppercase tracking-widest mb-6">Consumo Mensal</h2>
-                                <div className="flex justify-between items-baseline mb-2">
-                                    <p className="text-4xl font-bold text-white">R$ {gasto}</p>
-                                    <p className="text-spark-cyan font-mono text-xl">{porcentagem}%</p>
+                    <main className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        {/* Coluna do Monitor (Dashboard) */}
+                        <div className="lg:col-span-2 space-y-8">
+                            <div className="glass border border-white/10 p-10 rounded-[2.5rem] relative overflow-hidden">
+                                <h2 className="text-xs text-spark-blue font-black uppercase tracking-widest mb-8">Status do Tanque / Consumo Mensal</h2>
+                                
+                                <div className="flex justify-between items-end mb-4">
+                                    <div>
+                                        <span className="text-white/40 text-xs uppercase font-bold">Total Acumulado</span>
+                                        <p className="text-5xl font-black text-white mt-1">R$ {gastoTotal.toLocaleString('pt-BR')}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-spark-cyan font-mono text-3xl font-bold italic">{porcentagem}%</p>
+                                    </div>
                                 </div>
                                 
-                                <div className="w-full h-4 bg-white/5 rounded-full mt-4 p-[2px] border border-white/10">
+                                <div className="w-full h-5 bg-white/5 rounded-full mt-6 p-[3px] border border-white/10">
                                     <div 
-                                        className="h-full bg-gradient-to-r from-spark-blue to-spark-cyan rounded-full transition-all duration-1000 neon-border"
+                                        className="h-full bg-gradient-to-r from-spark-blue to-spark-cyan rounded-full transition-all duration-700 ease-out neon-glow"
                                         style={{ width: `${porcentagem}%` }}
                                     ></div>
                                 </div>
-                                <p className="mt-4 text-[10px] text-white/30 uppercase font-bold text-right">Limite: R$ {limite}</p>
+                                
+                                <div className="flex justify-between mt-6 text-[10px] text-white/20 uppercase font-black">
+                                    <span>Sistema Ativo</span>
+                                    <span>Limite de Segurança: R$ {limite}</span>
+                                </div>
                             </div>
+                        </div>
 
-                            {/* Card de Status */}
-                            <div className="bg-gradient-to-br from-spark-blue/10 to-transparent border border-white/5 p-8 rounded-[2rem]">
-                                <h3 className="text-spark-cyan text-sm font-bold mb-4">Status da Ignição</h3>
-                                <p className="text-white/60 text-sm leading-relaxed">
-                                    O Senhor está operando dentro da margem de segurança. O SPARK detectou economia de 12% este mês.
+                        {/* Coluna de Comandos (Input) */}
+                        <div className="space-y-6">
+                            <div className="glass border border-spark-blue/20 p-8 rounded-[2rem]">
+                                <h3 className="text-spark-cyan text-xs font-black uppercase mb-6 tracking-widest">Injetar Novo Gasto</h3>
+                                <form onSubmit={adicionarGasto} className="space-y-4">
+                                    <input 
+                                        type="number" 
+                                        value={novoGasto}
+                                        onChange={(e) => setNovoGasto(e.target.value)}
+                                        placeholder="Valor R$"
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-spark-cyan transition-colors font-bold"
+                                    />
+                                    <button 
+                                        type="submit"
+                                        className="w-full bg-spark-blue hover:bg-spark-cyan text-white hover:text-spark-dark font-black py-4 rounded-xl transition-all uppercase text-xs tracking-[0.2em]"
+                                    >
+                                        Confirmar Ignição
+                                    </button>
+                                </form>
+                            </div>
+                            
+                            <div className="p-6 border border-white/5 rounded-[2rem] opacity-50">
+                                <p className="text-[10px] leading-relaxed uppercase font-bold text-white/40">
+                                    Mestre, os dados inseridos são temporários nesta versão. O SPARK está pronto para operação.
                                 </p>
                             </div>
                         </div>
