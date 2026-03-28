@@ -3,51 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SPARK Finance</title>
+    <title>SPARK - Ignition Finance</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script>
-        tailwind.config = { theme: { extend: { colors: { spark: { dark: '#050B18', blue: '#0066FF', cyan: '#00F0FF', silver: '#E2E8F0' } } } } }
+        tailwind.config = { theme: { extend: { colors: { spark: { dark: '#050B18', blue: '#0066FF', cyan: '#00F0FF' } } } } }
     </script>
+    <style>
+        body { background-color: #050B18; color: #E2E8F0; font-family: sans-serif; }
+        .neon-glow { box-shadow: 0 0 20px rgba(0, 240, 255, 0.3); }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+    </style>
 </head>
-<body class="bg-[#050B18] text-[#E2E8F0]">
+<body>
     <div id="root"></div>
     <script type="text/babel">
-        const { useState } = React;
+        const { useState, useEffect } = React;
+
         function App() {
-            const [gastoTotal, setGastoTotal] = useState(650);
-            const [input, setInput] = useState('');
+            // Inicializa buscando a lista de transações do disco (localStorage)
+            const [transacoes, setTransacoes] = useState(() => {
+                const salvo = localStorage.getItem('spark_db_v1');
+                return salvo ? JSON.parse(salvo) : [];
+            });
+            const [valorInput, setValorInput] = useState('');
             const limite = 1200;
-            const porcentagem = Math.min(Math.round((gastoTotal / limite) * 100), 100);
+
+            // Toda vez que a lista mudar, o Senhor salva no navegador automaticamente
+            useEffect(() => {
+                localStorage.setItem('spark_db_v1', JSON.stringify(transacoes));
+            }, [transacoes]);
+
+            // Cálculos dinâmicos
+            const totalGastos = transacoes.reduce((acc, t) => t.tipo === 'saida' ? acc + t.valor : acc, 0);
+            const porcentagem = Math.min(Math.round((totalGastos / limite) * 100), 100);
+
+            const registrarOperacao = (tipo) => {
+                if (!valorInput || valorInput <= 0) return;
+                
+                const novaTransacao = {
+                    id: Date.now(),
+                    valor: parseFloat(valorInput),
+                    tipo: tipo, // 'entrada' ou 'saida'
+                    data: new Date().toLocaleDateString('pt-BR')
+                };
+
+                setTransacoes([novaTransacao, ...transacoes]);
+                setValorInput('');
+            };
+
+            const resetarSistema = () => {
+                if(confirm("Mestre, deseja apagar todos os registros do ciclo atual?")) {
+                    setTransacoes([]);
+                }
+            };
 
             return (
-                <div className="min-h-screen p-8 max-w-4xl mx-auto">
-                    <header className="mb-12">
-                        <div className="flex items-center gap-4">
-                            <img src="assets/logo.png" className="w-16 h-16 object-contain" />
-                            <img src="assets/texto-spark.png" className="h-8 object-contain" />
-                        </div>
+                <div className="min-h-screen p-6 max-w-xl mx-auto">
+                    <header className="mb-10 flex items-center gap-4">
+                        <img src="assets/logo.png" className="w-16 h-16 object-contain" onError={(e) => e.target.src='https://via.placeholder.com/64/0066FF/FFFFFF?text=S'} />
+                        <img src="assets/texto-spark.png" className="h-8 object-contain" onError={(e) => e.target.src='https://via.placeholder.com/150/00F0FF/000000?text=SPARK'} />
                     </header>
-                    <div className="bg-white/5 border border-white/10 p-10 rounded-[2.5rem] shadow-2xl mb-8">
-                        <h2 className="text-spark-blue text-xs font-black uppercase tracking-widest mb-6">Consumo Mensal</h2>
+
+                    {/* Dashboard de Consumo */}
+                    <div className="glass p-8 rounded-[2.5rem] mb-8 relative overflow-hidden">
+                        <p className="text-spark-blue text-[10px] font-black uppercase tracking-[0.3em] mb-4">Consumo Mensal / High Performance</p>
                         <div className="flex justify-between items-end mb-4">
-                            <p className="text-5xl font-bold">R$ {gastoTotal}</p>
-                            <p className="text-spark-cyan font-mono text-2xl">{porcentagem}%</p>
+                            <h2 className="text-5xl font-bold">R$ {totalGastos.toLocaleString('pt-BR')}</h2>
+                            <span className="text-spark-cyan font-mono text-2xl italic">{porcentagem}%</span>
                         </div>
-                        <div className="w-full h-4 bg-white/10 rounded-full overflow-hidden">
-                            <div className="h-full bg-gradient-to-r from-spark-blue to-spark-cyan shadow-[0_0_15px_#00F0FF]" style={{width: `${porcentagem}%`}}></div>
+                        <div className="w-full h-4 bg-white/5 rounded-full p-1 border border-white/10">
+                            <div className="h-full bg-gradient-to-r from-spark-blue to-spark-cyan rounded-full transition-all duration-1000 neon-glow" style={{ width: `${porcentagem}%` }}></div>
                         </div>
                     </div>
-                    <div className="bg-white/5 p-8 rounded-[2rem] border border-spark-blue/20">
-                        <input type="number" value={input} onChange={(e)=>setInput(e.target.value)} placeholder="Valor do Gasto" className="w-full bg-transparent border-b border-white/20 p-4 mb-4 outline-none focus:border-spark-cyan" />
-                        <button onClick={()=>{setGastoTotal(gastoTotal + Number(input)); setInput('')}} className="w-full bg-spark-blue py-4 rounded-xl font-bold uppercase tracking-widest hover:bg-spark-cyan hover:text-dark transition-all">Injetar Gasto</button>
+
+                    {/* Painel de Injeção */}
+                    <div className="glass p-6 rounded-[2rem] border-spark-blue/20">
+                        <input 
+                            type="number" 
+                            value={valorInput}
+                            onChange={(e) => setValorInput(e.target.value)}
+                            placeholder="Valor R$ 0,00" 
+                            className="w-full bg-transparent border-b border-white/10 p-4 mb-6 text-2xl outline-none focus:border-spark-cyan font-bold transition-all text-center"
+                        />
+                        <div className="grid grid-cols-2 gap-4">
+                            <button onClick={() => registrarOperacao('saida')} className="bg-spark-blue py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:brightness-125 transition-all active:scale-95">Injetar Gasto</button>
+                            <button onClick={() => registrarOperacao('entrada')} className="border border-green-500/50 text-green-400 py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-green-500/10 transition-all active:scale-95">Receita (+)</button>
+                        </div>
+                        <button onClick={resetarSistema} className="w-full mt-6 text-[10px] uppercase font-bold text-white/20 hover:text-red-400 transition-all">Reiniciar Ciclo de Ignição</button>
+                    </div>
+
+                    {/* Histórico Simples */}
+                    <div className="mt-10">
+                        <h3 className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-4 px-2">Últimos Registros</h3>
+                        <div className="space-y-3">
+                            {transacoes.slice(0, 3).map(t => (
+                                <div key={t.id} className="glass p-4 rounded-xl flex justify-between items-center animate-fadeIn">
+                                    <span className={`text-xs font-bold uppercase ${t.tipo === 'entrada' ? 'text-green-400' : 'text-white/60'}`}>
+                                        {t.tipo === 'entrada' ? 'Receita' : 'Gasto'}
+                                    </span>
+                                    <span className="font-mono font-bold">R$ {t.valor.toLocaleString('pt-BR')}</span>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             );
         }
-        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
