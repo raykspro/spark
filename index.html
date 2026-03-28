@@ -1,1 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPARK - Ignition Finance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        spark: {
+                            dark: '#050B18',
+                            blue: '#0066FF',
+                            cyan: '#00F0FF',
+                            silver: '#E2E8F0'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #050B18; color: #E2E8F0; }
+        .neon-border { box-shadow: 0 0 15px rgba(0, 240, 255, 0.4); }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        function App() {
+            const [gasto, setGasto] = useState(650);
+            const limite = 1200;
+            
+            // Cálculo mestre: (Gasto / Limite) * 100
+            const porcentagem = Math.round((gasto / limite) * 100);
+
+            return (
+                <div className="min-h-screen p-6 md:p-12 font-sans">
+                    <header className="flex flex-col mb-16">
+                        <div className="flex items-center gap-4">
+                            {/* Caminho das imagens que o Senhor vai subir no Github */}
+                            <img src="assets/logo.png" alt="S" className="w-16 h-16 object-contain" />
+                            <img src="assets/texto-spark.png" alt="SPARK" className="h-10 object-contain" />
+                        </div>
+                        <p className="text-spark-blue text-[10px] uppercase tracking-[0.5em] mt-4 font-bold ml-2">
+                            High Performance Finance
+                        </p>
+                    </header>
+
+                    <main className="max-w-4xl">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            {/* Card de Meta */}
+                            <div className="bg-white/5 border border-white/10 p-8 rounded-[2rem] backdrop-blur-md relative overflow-hidden">
+                                <h2 className="text-xs text-spark-blue font-black uppercase tracking-widest mb-6">Consumo Mensal</h2>
+                                <div className="flex justify-between items-baseline mb-2">
+                                    <p className="text-4xl font-bold text-white">R$ {gasto}</p>
+                                    <p className="text-spark-cyan font-mono text-xl">{porcentagem}%</p>
+                                </div>
+                                
+                                <div className="w-full h-4 bg-white/5 rounded-full mt-4 p-[2px] border border-white/10">
+                                    <div 
+                                        className="h-full bg-gradient-to-r from-spark-blue to-spark-cyan rounded-full transition-all duration-1000 neon-border"
+                                        style={{ width: `${porcentagem}%` }}
+                                    ></div>
+                                </div>
+                                <p className="mt-4 text-[10px] text-white/30 uppercase font-bold text-right">Limite: R$ {limite}</p>
+                            </div>
+
+                            {/* Card de Status */}
+                            <div className="bg-gradient-to-br from-spark-blue/10 to-transparent border border-white/5 p-8 rounded-[2rem]">
+                                <h3 className="text-spark-cyan text-sm font-bold mb-4">Status da Ignição</h3>
+                                <p className="text-white/60 text-sm leading-relaxed">
+                                    O Senhor está operando dentro da margem de segurança. O SPARK detectou economia de 12% este mês.
+                                </p>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
