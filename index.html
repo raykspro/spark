@@ -126,11 +126,11 @@
             );
         };
 
-        // --- COMPONENTE AVATAR MASTER ---
-        const Avatar = ({ photo, name, size = "12", onClick }) => (
+// --- COMPONENTE AVATAR MASTER ---
+        const Avatar = ({ photo, name, size = "12", onClick, className = "" }) => (
             <div 
                 onClick={onClick}
-                className={`w-${size} h-${size} rounded-full accent-bg flex items-center justify-center border-2 border-white/20 shadow-spark overflow-hidden glass relative group cursor-pointer active:scale-90`}
+                className={`w-${size} h-${size} rounded-full accent-bg flex items-center justify-center border-2 border-white/20 shadow-spark overflow-hidden glass relative group cursor-pointer active:scale-90 ${className}`}
             >
                 <img 
                     src={photo || `https://ui-avatars.com/api/?name=${name}&background=0066FF&color=fff&bold=true&size=512`} 
@@ -178,6 +178,7 @@
                 </div>
             );
         };
+
         function App() {
             // --- ESTADOS DE SEGURANÇA E PREFERÊNCIAS ---
             const [isLocked, setIsLocked] = useState(true);
@@ -188,33 +189,23 @@
             const [tab, setTab] = useState('home');
             const [showPinError, setShowPinError] = useState(false);
             
-            // --- ESTADOS DE DADOS FINANCEIROS ---
             const [transacoes, setTransacoes] = useState(() => {
                 const saved = localStorage.getItem('spark_data_v4');
                 return saved ? JSON.parse(saved) : [];
             });
-            const [tetoGasto, setTetoGasto] = useState(() => {
-                return parseFloat(localStorage.getItem('spark_teto')) || 3500;
-            });
+            const [tetoGasto, setTetoGasto] = useState(() => parseFloat(localStorage.getItem('spark_teto')) || 3500);
             
-            // --- ESTADOS DE ENTRADA (FORMULÁRIO) ---
             const [valor, setValor] = useState('');
             const [nota, setNota] = useState('');
             const [categoria, setCategoria] = useState('Alimentação');
             const [busca, setBusca] = useState('');
             const [isExporting, setIsExporting] = useState(false);
 
-            // --- CONFIGURAÇÕES DE CATEGORIAS ---
             const catColors = { 
-                Alimentação: "#FF6B6B", 
-                Lazer: "#4DABF7", 
-                Fatura: "#FAB005", 
-                Saúde: "#51CF66", 
-                Transporte: "#845EF7", 
-                Investimento: "#20C997" 
+                Alimentação: "#FF6B6B", Lazer: "#4DABF7", Fatura: "#FAB005", 
+                Saúde: "#51CF66", Transporte: "#845EF7", Investimento: "#20C997" 
             };
 
-            // --- SINCRONIZAÇÃO DE PERSISTÊNCIA ---
             useEffect(() => {
                 localStorage.setItem('spark_data_v4', JSON.stringify(transacoes));
                 localStorage.setItem('spark_name', masterName);
@@ -224,35 +215,23 @@
                 document.documentElement.style.setProperty('--accent-color', accent);
             }, [transacoes, masterName, masterPhoto, accent, tetoGasto]);
 
-            // --- CÁLCULOS DE PERFORMANCE (USEMEMO PARA ROBUSTEZ) ---
             const stats = useMemo(() => {
                 const total = transacoes.reduce((acc, t) => acc + t.valor, 0);
                 const porCat = transacoes.reduce((acc, t) => {
                     acc[t.categoria] = (acc[t.categoria] || 0) + t.valor;
                     return acc;
                 }, {});
-
-                const categoriasOrdenadas = Object.entries(porCat)
-                    .sort(([, a], [, b]) => b - a);
-
-                const progresso = Math.min((total / tetoGasto) * 100, 100);
-                const restante = Math.max(tetoGasto - total, 0);
-
                 return { 
-                    total, 
-                    porCat, 
-                    progresso, 
-                    restante, 
-                    categoriasOrdenadas,
-                    mediaPorTransacao: total / (transacoes.length || 1)
+                    total, porCat, 
+                    progresso: Math.min((total / tetoGasto) * 100, 100), 
+                    restante: Math.max(tetoGasto - total, 0) 
                 };
             }, [transacoes, tetoGasto]);
 
-            // --- AÇÕES DO SISTEMA ---
             const handlePinInput = (value) => {
                 setPin(value);
-                if (value === '1234') { // PIN MASTER PADRÃO
-                    setIsLocked(false);
+                if (value === '1234') { 
+                    setIsLocked(false); 
                     setShowPinError(false);
                 } else if (value.length >= 4) {
                     setShowPinError(true);
@@ -260,74 +239,6 @@
                 }
             };
 
-            const addTransacao = () => {
-                const numValor = parseFloat(valor.replace(',', '.'));
-                if (!numValor || isNaN(numValor) || numValor <= 0) {
-                    alert("Senhor, por favor insira um valor válido.");
-                    return;
-                }
-                
-                const nova = { 
-                    id: Date.now(), 
-                    valor: numValor, 
-                    nota: nota.trim() || 'Gasto sem descrição', 
-                    categoria, 
-                    data: new Date().toLocaleDateString('pt-BR'),
-                    timestamp: new Date().toISOString()
-                };
-
-                setTransacoes(prev => [nova, ...prev]);
-                setValor(''); 
-                setNota('');
-                
-                // Feedback tátil visual
-                if (window.navigator.vibrate) window.navigator.vibrate(50);
-            };
-
-            const deleteTransacao = (id) => {
-                if(confirm("Mestre, confirma a exclusão definitiva deste registro?")) {
-                    setTransacoes(prev => prev.filter(t => t.id !== id));
-                }
-            };
-
-            const exportPDF = async () => {
-                setIsExporting(true);
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
-                
-                // Cabeçalho Premium
-                doc.setFillColor(2, 6, 23);
-                doc.rect(0, 0, 210, 40, 'F');
-                doc.setTextColor(255, 255, 255);
-                doc.setFontSize(22);
-                doc.text("SPARK OMNI VAULT", 20, 25);
-                doc.setFontSize(10);
-                doc.text(`Relatório Gerado para: ${masterName}`, 20, 32);
-
-                // Corpo
-                doc.setTextColor(40, 40, 40);
-                doc.setFontSize(14);
-                doc.text("Resumo Financeiro:", 20, 55);
-                doc.text(`Total Acumulado: R$ ${stats.total.toFixed(2)}`, 20, 65);
-                doc.text(`Teto Definido: R$ ${tetoGasto.toFixed(2)}`, 20, 72);
-
-                let y = 90;
-                doc.setFontSize(10);
-                transacoes.forEach((t, i) => {
-                    if (y > 280) { doc.addPage(); y = 20; }
-                    doc.text(`${t.data} | [${t.categoria.toUpperCase()}]`, 20, y);
-                    doc.text(`${t.nota}`, 20, y + 5);
-                    doc.text(`R$ ${t.valor.toFixed(2)}`, 170, y + 5, { align: 'right' });
-                    doc.setDrawColor(230, 230, 230);
-                    doc.line(20, y + 8, 190, y + 8);
-                    y += 15;
-                });
-
-                doc.save(`SPARK_MASTER_${masterName}_${Date.now()}.pdf`);
-                setTimeout(() => setIsExporting(false), 1000);
-            };
-
-            // --- TELA DE BLOQUEIO (VAULT OVERLAY) ---
             if (isLocked) {
                 return (
                     <div className="fixed inset-0 flex items-center justify-center glass-dark z-[100] animate-master px-10">
@@ -338,56 +249,37 @@
                                     <Icon name="Lock" className="w-5 h-5 text-white" />
                                 </div>
                             </div>
-                            <h2 className="text-3xl font-black mb-1 uppercase tracking-tighter">Vault de Segurança</h2>
-                            <p className="text-[10px] opacity-40 mb-10 uppercase tracking-[0.4em] font-bold">Identidade: {masterName}</p>
-                            
-                            <div className="relative group">
-                                <input 
-                                    type="password" 
-                                    inputMode="numeric"
-                                    value={pin} 
-                                    onChange={(e) => handlePinInput(e.target.value)}
-                                    placeholder="••••" 
-                                    className="w-full bg-white/5 border-2 border-white/5 rounded-3xl py-6 text-center text-4xl tracking-[0.8em] focus:accent-border focus:bg-white/10 transition-all placeholder:opacity-20"
-                                />
-                                {showPinError && <p className="text-red-500 text-[10px] font-black mt-4 uppercase animate-pulse">Acesso Negado, Mestre</p>}
-                            </div>
-                            <p className="mt-8 text-[9px] opacity-20 font-medium uppercase tracking-widest">Criptografia Omni-End-to-End v3.5</p>
+                            <h2 className="text-3xl font-black mb-1 uppercase tracking-tighter text-white">Vault de Segurança</h2>
+                            <p className="text-[10px] opacity-40 mb-10 uppercase tracking-[0.4em] font-bold text-white">Identidade: {masterName}</p>
+                            <input 
+                                type="password" inputMode="numeric" value={pin} 
+                                onChange={(e) => handlePinInput(e.target.value)}
+                                placeholder="••••" 
+                                className="w-full bg-white/5 border-2 border-white/5 rounded-3xl py-6 text-center text-4xl tracking-[0.8em] text-white focus:outline-none"
+                            />
                         </div>
                     </div>
                 );
-// --- RENDERIZAÇÃO DA INTERFACE PRINCIPAL ---
+            }
+
             return (
                 <div className="max-w-md mx-auto w-full px-6 pt-12 pb-32 animate-master min-h-screen flex flex-col">
-                    {/* HEADER STATUS BAR */}
                     <header className="flex justify-between items-center mb-10 group">
                         <div className="transform transition-transform group-hover:translate-x-2">
-                            <h1 className="text-[10px] font-black opacity-30 uppercase tracking-[0.4em] mb-1">Omni Vault v3.5</h1>
-                            <p className="text-3xl font-black tracking-tighter leading-none">
+                            <h1 className="text-[10px] font-black opacity-30 uppercase tracking-[0.4em] mb-1 text-white">Omni Vault v3.5</h1>
+                            <p className="text-3xl font-black tracking-tighter leading-none text-white">
                                 Olá, <span className="accent-text">{masterName}</span>
                             </p>
                         </div>
-                        <div className="relative">
-                            <Avatar 
-                                name={masterName} 
-                                photo={masterPhoto} 
-                                size="14" 
-                                onClick={() => setTab('config')} 
-                            />
-                            <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-4 border-[#020617] rounded-full"></span>
-                        </div>
+                        <Avatar name={masterName} photo={masterPhoto} size="14" onClick={() => setTab('config')} />
                     </header>
 
-                    {/* CONTEÚDO DINÂMICO POR ABAS */}
                     <main className="flex-1">
                         {tab === 'home' && (
                             <div className="space-y-8 animate-master">
-                                {/* CARD DE SALDO MASTER */}
                                 <div className="glass rounded-[3.5rem] p-10 relative overflow-hidden shadow-spark border-white/5">
-                                    <div className="absolute top-0 right-0 w-40 h-40 accent-bg opacity-10 blur-[80px] -mr-20 -mt-20 animate-pulse"></div>
-                                    
-                                    <div className="flex justify-between items-start mb-8">
-                                        <div className="z-10">
+                                    <div className="flex justify-between items-start">
+                                        <div className="z-10 text-white">
                                             <p className="text-[10px] font-bold opacity-40 uppercase tracking-[0.2em] mb-2">Gasto Consolidado</p>
                                             <h2 className="text-5xl font-black tracking-tighter mb-1">
                                                 <span className="text-2xl mr-1 opacity-50 font-medium font-sans">R$</span>
@@ -397,10 +289,11 @@
                                                 {stats.restante > 0 ? `Disponível: R$ ${stats.restante.toFixed(2)}` : 'Limite Excedido'}
                                             </p>
                                         </div>
-                                        <div className="w-28 h-28 shrink-0 relative">
+                                        <div className="w-28 h-28 shrink-0">
                                             <PieChart data={stats.porCat} colors={catColors} />
                                         </div>
                                     </div>
+                                </div>
 
                                     {/* BARRA DE PROGRESSO PREMIUM */}
                                     <div className="space-y-3">
