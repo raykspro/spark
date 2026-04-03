@@ -27,48 +27,90 @@
         }
     </script>
     <style>
-        * { transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.1s ease; }
-        .glass { backdrop-filter: blur(12px); background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); }
-        .light .glass { background: rgba(255, 255, 255, 0.7); border: 1px solid rgba(0, 0, 0, 0.05); box-shadow: 0 4px 20px -5px rgba(0,0,0,0.05); }
-        .spark-gradient { background: linear-gradient(90deg, #0066FF 0%, #00F0FF 100%); }
-        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        /* Transições de Estado */
+        * { transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease, transform 0.1s ease; }
+        
+        /* Glassmorphism 2.0 - Calibragem Moto G24 */
+        .glass { 
+            backdrop-filter: blur(16px); 
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        /* Camada Escura: Profundidade Profissional */
+        .dark .glass { 
+            background: rgba(15, 23, 42, 0.6); 
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Camada Clara: Leveza e Nitidez Superior */
+        .light .glass { 
+            background: rgba(255, 255, 255, 0.85); 
+            border: 1px solid rgba(0, 0, 0, 0.05); 
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04); 
+        }
+
+        .spark-gradient { background: linear-gradient(135deg, #0066FF 0%, #00F0FF 100%); }
+        
+        /* Reset de Inputs Mobile */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        
         .spark-scrollbar::-webkit-scrollbar { height: 4px; }
-        .spark-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,102,255,0.2); border-radius: 10px; }
+        .spark-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,102,255,0.3); border-radius: 10px; }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-spark-dark text-slate-900 dark:text-slate-100 min-h-screen">
+<body class="bg-slate-50 dark:bg-spark-dark text-slate-900 dark:text-slate-100 min-h-screen transition-colors duration-300">
     <div id="root"></div>
     <script type="text/babel">
         const { useState, useEffect } = React;
 
         function App() {
+            // Persistência de Dados e Preferências
             const [transacoes, setTransacoes] = useState(() => JSON.parse(localStorage.getItem('spark_db_v6')) || []);
             const [metas, setMetas] = useState(() => JSON.parse(localStorage.getItem('spark_metas')) || {
                 Geral: 2000, Alimentação: 500, Lazer: 300, Fatura: 1000, Transporte: 200, Saúde: 200, Investimento: 500
             });
             const [isDark, setIsDark] = useState(() => localStorage.getItem('spark_theme') !== 'light');
+            
+            // Estados de Interface
             const [aba, setAba] = useState('home'); 
             const [valor, setValor] = useState('');
             const [categoria, setCategoria] = useState('Alimentação');
             const [metodo, setMetodo] = useState('Pix');
             const [nota, setNota] = useState('');
 
+            // Sincronização de Tema
             useEffect(() => {
                 const root = window.document.documentElement;
-                if (isDark) { root.classList.add('dark'); localStorage.setItem('spark_theme', 'dark'); }
-                else { root.classList.remove('dark'); localStorage.setItem('spark_theme', 'light'); }
+                if (isDark) { 
+                    root.classList.add('dark'); 
+                    localStorage.setItem('spark_theme', 'dark'); 
+                } else { 
+                    root.classList.remove('dark'); 
+                    localStorage.setItem('spark_theme', 'light'); 
+                }
             }, [isDark]);
 
+            // Sincronização de Banco de Dados
             useEffect(() => { localStorage.setItem('spark_db_v6', JSON.stringify(transacoes)); }, [transacoes]);
             useEffect(() => { localStorage.setItem('spark_metas', JSON.stringify(metas)); }, [metas]);
 
+            // Inteligência Financeira
             const totalGeralGasto = transacoes.reduce((acc, t) => t.tipo === 'saida' ? acc + t.valor : acc, 0);
             const saldoReal = transacoes.reduce((acc, t) => t.tipo === 'entrada' ? acc + t.valor : (t.metodo !== 'Crédito' ? acc - t.valor : acc), 0);
-            const faturaEstimada = transacoes.reduce((acc, t) => (t.tipo === 'saida' && t.metodo === 'Crédito') ? acc + t.valor : acc, 0);
 
             const lancar = (tipo) => {
                 if (!valor) return;
-                const nova = { id: Date.now(), valor: parseFloat(valor), tipo, categoria, metodo, nota: nota || `Gasto em ${categoria}`, data: new Date().toLocaleDateString('pt-BR') };
+                const nova = { 
+                    id: Date.now(), 
+                    valor: parseFloat(valor), 
+                    tipo, 
+                    categoria, 
+                    metodo, 
+                    nota: nota || (tipo === 'entrada' ? 'Receita' : `Gasto em ${categoria}`), 
+                    data: new Date().toLocaleDateString('pt-BR') 
+                };
                 setTransacoes([nova, ...transacoes]);
                 setValor(''); setNota('');
             };
@@ -87,9 +129,9 @@
                                     <span className="text-[10px] font-black uppercase opacity-40">{cat}</span>
                                     <span className={`text-[10px] font-black ${perc > 90 ? 'text-red-500' : 'text-spark-blue'}`}>{perc}%</span>
                                 </div>
-                                <div className="flex justify-between items-baseline">
-                                    <p className="text-2xl font-black italic text-slate-800 dark:text-white">R$ {gasto.toLocaleString('pt-BR')}</p>
-                                    <p className="text-[9px] font-bold opacity-20">TETO R$ {metas[cat]}</p>
+                                <div className="flex justify-between items-baseline text-slate-900 dark:text-white">
+                                    <p className="text-2xl font-black italic">R$ {gasto.toLocaleString('pt-BR')}</p>
+                                    <p className="text-[9px] font-bold opacity-20 uppercase">TETO R$ {metas[cat]}</p>
                                 </div>
                                 <div className="h-1.5 w-full bg-slate-200 dark:bg-white/5 rounded-full mt-3 overflow-hidden">
                                     <div className={`h-full transition-all duration-1000 ${perc > 90 ? 'bg-red-500' : 'bg-spark-blue'}`} style={{ width: `${perc}%` }}></div>
@@ -102,50 +144,51 @@
 
             return (
                 <div className="min-h-screen p-4 max-w-2xl mx-auto pb-28">
-                    {/* Header */}
+                    {/* Header Operacional */}
                     <div className="flex justify-between items-center mb-8 pt-4 px-2">
                         <div className="flex gap-4 items-center">
                             <div className="w-10 h-10 bg-spark-blue rounded-2xl flex items-center justify-center font-black italic text-white shadow-lg shadow-spark-blue/30 text-xl">S</div>
                             <div>
-                                <p className="text-[8px] opacity-40 uppercase font-black tracking-widest">Saldo Real</p>
+                                <p className="text-[8px] opacity-40 uppercase font-black tracking-widest text-slate-500 dark:text-white/40">Saldo Real</p>
                                 <p className="text-xl font-black italic text-spark-green">R$ {saldoReal.toLocaleString('pt-BR')}</p>
                             </div>
                         </div>
                         <div className="flex gap-2">
                             <button onClick={() => setIsDark(!isDark)} className="glass p-3 rounded-2xl shadow-sm text-lg">{isDark ? '☀️' : '🌙'}</button>
-                            <button onClick={() => setAba(aba === 'stats' ? 'home' : 'stats')} className={`p-3 rounded-2xl border shadow-sm ${aba === 'stats' ? 'bg-spark-blue border-spark-blue text-white' : 'glass border-white/10 opacity-60'}`}>📊</button>
+                            <button onClick={() => setAba(aba === 'stats' ? 'home' : 'stats')} className={`p-3 rounded-2xl border shadow-sm transition-all ${aba === 'stats' ? 'bg-spark-blue border-spark-blue text-white scale-110' : 'glass border-white/10 opacity-60'}`}>📊</button>
                             <button onClick={() => setAba(aba === 'config' ? 'home' : 'config')} className="glass p-3 rounded-2xl border-white/10 shadow-sm opacity-60">⚙️</button>
                         </div>
                     </div>
 
                     {aba === 'config' ? (
                         <div className="space-y-3 animate-in slide-in-from-bottom-4 duration-300">
-                             <h2 className="text-xl font-black uppercase mb-6 italic">Configurar Metas</h2>
+                             <h2 className="text-xl font-black uppercase mb-6 italic tracking-tighter">Limites de Ciclo</h2>
                              {Object.keys(metas).map(cat => (
                                 <div key={cat} className="glass p-5 rounded-[2rem] flex justify-between items-center">
-                                    <span className="font-black text-[10px] uppercase opacity-40">{cat}</span>
+                                    <span className="font-black text-[10px] uppercase opacity-40 tracking-widest">{cat}</span>
                                     <input type="number" value={metas[cat]} onChange={(e) => setMetas({...metas, [cat]: parseFloat(e.target.value) || 0})} className="bg-transparent text-right font-black text-spark-blue outline-none w-24 text-lg"/>
                                 </div>
                             ))}
                         </div>
                     ) : aba === 'stats' ? <StatsPanel /> : (
                         <>
-                            {/* Dashboard Tanque */}
-                            <div className="glass rounded-[3rem] p-10 mb-8 border-none relative overflow-hidden shadow-xl dark:bg-white/5 bg-white/80">
-                                <h3 className="text-spark-blue text-[10px] font-black uppercase tracking-widest mb-1 italic opacity-60 text-center">Gasto Global Mensal</h3>
+                            {/* Dash Principal - Glass 2.0 */}
+                            <div className="glass rounded-[3rem] p-10 mb-8 border-none relative overflow-hidden shadow-xl">
+                                <h3 className="text-spark-blue text-[10px] font-black uppercase tracking-widest mb-1 italic opacity-60 text-center">Consumo Mensal Global</h3>
                                 <div className="flex justify-center items-baseline gap-2 mb-6">
-                                    <p className="text-5xl font-black italic tracking-tighter">R$ {totalGeralGasto.toLocaleString('pt-BR')}</p>
+                                    <p className="text-5xl font-black italic tracking-tighter text-slate-900 dark:text-white">R$ {totalGeralGasto.toLocaleString('pt-BR')}</p>
                                     <span className="text-spark-blue font-black text-xl italic">{Math.min(Math.round((totalGeralGasto/metas.Geral)*100),100)}%</span>
                                 </div>
                                 <div className="h-3 w-full bg-slate-200 dark:bg-white/10 rounded-full p-[2px] overflow-hidden">
                                     <div className="h-full spark-gradient rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(0,102,255,0.4)]" style={{ width: `${Math.min((totalGeralGasto/metas.Geral)*100),100}%` }}></div>
                                 </div>
+                                <p className="text-[10px] font-bold text-slate-400 dark:text-white/20 mt-4 uppercase tracking-tighter text-center">Meta do Senhor: R$ {metas.Geral.toLocaleString('pt-BR')}</p>
                             </div>
 
-                            {/* Entrada de Dados */}
-                            <div className="glass rounded-[2.5rem] p-8 mb-8 border-none shadow-2xl dark:bg-white/5 bg-white/90">
-                                <input type="number" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="0.00" className="w-full bg-transparent text-center text-7xl font-black outline-none mb-4 tracking-tighter placeholder:opacity-10"/>
-                                <input type="text" value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Descrição" className="w-full bg-slate-100 dark:bg-white/5 border border-transparent dark:border-white/5 rounded-2xl p-4 mb-8 text-center text-sm font-bold outline-none focus:border-spark-blue transition-all"/>
+                            {/* Módulo de Entrada */}
+                            <div className="glass rounded-[2.5rem] p-8 mb-8 border-none shadow-2xl">
+                                <input type="number" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="0.00" className="w-full bg-transparent text-center text-7xl font-black outline-none mb-4 tracking-tighter placeholder:opacity-10 text-slate-900 dark:text-white"/>
+                                <input type="text" value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Descrição da Operação" className="w-full bg-slate-100 dark:bg-white/5 border border-transparent dark:border-white/5 rounded-2xl p-4 mb-8 text-center text-sm font-bold outline-none focus:border-spark-blue transition-all text-slate-800 dark:text-white"/>
 
                                 <div className="flex gap-2 overflow-x-auto pb-4 mb-8 spark-scrollbar">
                                     {Object.keys(metas).filter(k => k !== 'Geral').map(cat => (
@@ -157,29 +200,30 @@
 
                                 <div className="flex gap-2 mb-10">
                                     {["Pix", "Débito", "Crédito", "Dinheiro"].map(m => (
-                                        <button key={m} onClick={() => setMetodo(m)} className={`flex-1 py-4 rounded-2xl text-[9px] font-black uppercase border-2 transition-all ${metodo === m ? 'border-spark-blue bg-spark-blue text-white' : 'border-slate-100 dark:border-white/5 opacity-40'}`}>{m}</button>
+                                        <button key={m} onClick={() => setMetodo(m)} className={`flex-1 py-4 rounded-2xl text-[9px] font-black uppercase border-2 transition-all ${metodo === m ? 'border-spark-blue bg-spark-blue text-white shadow-md' : 'border-slate-100 dark:border-white/5 opacity-40'}`}>{m}</button>
                                     ))}
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <button onClick={() => lancar('saida')} className="bg-spark-blue text-white py-6 rounded-3xl font-black uppercase text-xs tracking-widest shadow-xl shadow-spark-blue/20 active:scale-95">Registrar Gasto</button>
-                                    <button onClick={() => lancar('entrada')} className="border-2 border-spark-green text-spark-green py-6 rounded-3xl font-black uppercase text-xs tracking-widest active:scale-95">Entrada</button>
+                                    <button onClick={() => lancar('entrada')} className="border-2 border-spark-green text-spark-green py-6 rounded-3xl font-black uppercase text-xs tracking-widest active:scale-95">Entrada (+)</button>
                                 </div>
                             </div>
 
-                            {/* Feed Recente */}
+                            {/* Histórico Compacto */}
                             <div className="space-y-4 px-2">
-                                {transacoes.slice(0, 8).map(t => (
-                                    <div key={t.id} className="glass p-6 rounded-[2rem] flex justify-between items-center border-none shadow-sm dark:bg-white/5 bg-white/70">
+                                <h4 className="text-[10px] font-black uppercase opacity-20 tracking-widest mb-2">Últimas Operações</h4>
+                                {transacoes.slice(0, 10).map(t => (
+                                    <div key={t.id} className="glass p-6 rounded-[2rem] flex justify-between items-center border-none shadow-sm">
                                         <div>
                                             <div className="flex items-center gap-2 mb-1">
-                                                <span className="text-[9px] font-black uppercase opacity-40">{t.categoria}</span>
-                                                <span className={`text-[9px] font-black italic ${t.metodo === 'Crédito' ? 'text-red-500' : 'text-spark-blue opacity-60'}`}>{t.metodo}</span>
+                                                <span className="text-[9px] font-black uppercase opacity-40 text-slate-500 dark:text-white/40">{t.categoria}</span>
+                                                <span className={`text-[9px] font-black italic ${t.metodo === 'Crédito' ? 'text-red-500' : 'text-spark-blue opacity-70'}`}>{t.metodo}</span>
                                             </div>
-                                            <p className="text-sm font-bold opacity-80">{t.nota}</p>
+                                            <p className="text-sm font-bold opacity-80 text-slate-800 dark:text-white">{t.nota}</p>
                                         </div>
                                         <div className="text-right">
-                                            <p className={`text-xl font-black italic ${t.tipo === 'entrada' ? 'text-spark-green' : (t.metodo === 'Crédito' ? 'text-red-500' : 'text-slate-700 dark:text-white')}`}>
+                                            <p className={`text-xl font-black italic tracking-tight ${t.tipo === 'entrada' ? 'text-spark-green' : (t.metodo === 'Crédito' ? 'text-red-500' : 'text-slate-800 dark:text-white')}`}>
                                                 {t.tipo === 'entrada' ? '+' : '-'} {t.valor.toLocaleString('pt-BR')}
                                             </p>
                                             <p className="text-[9px] opacity-20 font-bold">{t.data}</p>
