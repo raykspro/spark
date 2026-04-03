@@ -27,11 +27,17 @@
         }
     </script>
     <style>
-        * { transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s ease, transform 0.1s ease; }
+        * { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .glass { backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
         .dark .glass { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3); }
         .light .glass { background: rgba(255, 255, 255, 0.85); border: 1px solid rgba(0, 0, 0, 0.05); box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04); }
         .spark-gradient { background: linear-gradient(135deg, #0066FF 0%, #00F0FF 100%); }
+        
+        /* Micro-interações */
+        .btn-active:active { transform: scale(0.95); filter: brightness(1.1); }
+        .tab-transition { animation: slideUp 0.4s ease-out; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
         input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         .spark-scrollbar::-webkit-scrollbar { height: 4px; }
         .spark-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,102,255,0.3); border-radius: 10px; }
@@ -41,6 +47,25 @@
     <div id="root"></div>
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
+
+        // Biblioteca de Ícones SVG Calibrados
+        const Icone = ({ nome, className = "w-5 h-5" }) => {
+            const icones = {
+                Alimentação: <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />,
+                Lazer: <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />,
+                Fatura: <path d="M21 4H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-1 11h-4v-2h4v2zm1-5H3V6h18v4z" />,
+                Transporte: <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 10l1.5-4.5h11L19 10H5z" />,
+                Saúde: <path d="M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z" />,
+                Investimento: <path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 17.08l1.5 1.41z" />,
+                Receita: <path d="M13 10V3L4 14h7v7l9-11h-7z" />,
+                Geral: <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+            };
+            return (
+                <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+                    {icones[nome] || icones.Geral}
+                </svg>
+            );
+        };
 
         function App() {
             const [transacoes, setTransacoes] = useState(() => JSON.parse(localStorage.getItem('spark_db_v6')) || []);
@@ -53,10 +78,8 @@
             const [categoria, setCategoria] = useState('Alimentação');
             const [metodo, setMetodo] = useState('Pix');
             const [nota, setNota] = useState('');
-            
-            // Novos estados da Fase 08
             const [busca, setBusca] = useState('');
-            const [filtroTempo, setFiltroTempo] = useState('tudo'); // tudo, hoje, semana, mes
+            const [filtroTempo, setFiltroTempo] = useState('tudo');
 
             useEffect(() => {
                 const root = window.document.documentElement;
@@ -75,7 +98,7 @@
                     tipo, 
                     categoria, 
                     metodo, 
-                    nota: nota || (tipo === 'entrada' ? 'Receita' : `Gasto em ${categoria}`), 
+                    nota: nota || (tipo === 'entrada' ? 'Receita Spark' : `Gasto ${categoria}`), 
                     timestamp: Date.now(),
                     data: new Date().toLocaleDateString('pt-BR') 
                 };
@@ -83,26 +106,14 @@
                 setValor(''); setNota('');
             };
 
-            // Lógica de Filtro Inteligente
             const transacoesFiltradas = useMemo(() => {
                 let filtradas = transacoes;
                 const agora = Date.now();
-                const umDia = 24 * 60 * 60 * 1000;
-
-                if (filtroTempo === 'hoje') {
-                    filtradas = filtradas.filter(t => (agora - t.timestamp) < umDia);
-                } else if (filtroTempo === 'semana') {
-                    filtradas = filtradas.filter(t => (agora - t.timestamp) < (umDia * 7));
-                } else if (filtroTempo === 'mes') {
-                    filtradas = filtradas.filter(t => (agora - t.timestamp) < (umDia * 30));
-                }
-
-                if (busca) {
-                    filtradas = filtradas.filter(t => 
-                        t.nota.toLowerCase().includes(busca.toLowerCase()) || 
-                        t.categoria.toLowerCase().includes(busca.toLowerCase())
-                    );
-                }
+                const umDia = 86400000;
+                if (filtroTempo === 'hoje') filtradas = filtradas.filter(t => (agora - t.timestamp) < umDia);
+                else if (filtroTempo === 'semana') filtradas = filtradas.filter(t => (agora - t.timestamp) < (umDia * 7));
+                else if (filtroTempo === 'mes') filtradas = filtradas.filter(t => (agora - t.timestamp) < (umDia * 30));
+                if (busca) filtradas = filtradas.filter(t => t.nota.toLowerCase().includes(busca.toLowerCase()) || t.categoria.toLowerCase().includes(busca.toLowerCase()));
                 return filtradas;
             }, [transacoes, busca, filtroTempo]);
 
@@ -110,91 +121,80 @@
             const gastoNoFiltro = transacoesFiltradas.reduce((acc, t) => t.tipo === 'saida' ? acc + t.valor : acc, 0);
 
             return (
-                <div className="p-4 max-w-2xl mx-auto pb-28">
+                <div className="p-4 max-w-2xl mx-auto pb-28 select-none">
                     {/* Header */}
                     <div className="flex justify-between items-center mb-8 pt-4 px-2">
                         <div className="flex gap-4 items-center">
-                            <div className="w-10 h-10 bg-spark-blue rounded-2xl flex items-center justify-center font-black italic text-white shadow-lg text-xl">S</div>
+                            <div className="w-10 h-10 bg-spark-blue rounded-2xl flex items-center justify-center font-black italic text-white shadow-lg shadow-spark-blue/30 text-xl">S</div>
                             <div>
                                 <p className="text-[8px] opacity-40 uppercase font-black tracking-widest">Saldo Real</p>
                                 <p className="text-xl font-black italic text-spark-green">R$ {saldoReal.toLocaleString('pt-BR')}</p>
                             </div>
                         </div>
                         <div className="flex gap-2">
-                            <button onClick={() => setIsDark(!isDark)} className="glass p-3 rounded-2xl text-lg">{isDark ? '☀️' : '🌙'}</button>
-                            <button onClick={() => setAba(aba === 'stats' ? 'home' : 'stats')} className={`p-3 rounded-2xl border transition-all ${aba === 'stats' ? 'bg-spark-blue border-spark-blue text-white' : 'glass border-white/10 opacity-60'}`}>📊</button>
-                            <button onClick={() => setAba(aba === 'config' ? 'home' : 'config')} className="glass p-3 rounded-2xl border-white/10 shadow-sm opacity-60">⚙️</button>
+                            <button onClick={() => setIsDark(!isDark)} className="glass p-3 rounded-2xl btn-active">{isDark ? '☀️' : '🌙'}</button>
+                            <button onClick={() => setAba(aba === 'stats' ? 'home' : 'stats')} className={`p-3 rounded-2xl border btn-active ${aba === 'stats' ? 'bg-spark-blue border-spark-blue text-white' : 'glass border-white/10 opacity-60'}`}>📊</button>
+                            <button onClick={() => setAba(aba === 'config' ? 'home' : 'config')} className="glass p-3 rounded-2xl border-white/10 opacity-60 btn-active">⚙️</button>
                         </div>
                     </div>
 
                     {aba === 'home' && (
-                        <>
-                            {/* Dashboard com Gasto Dinâmico conforme Filtro */}
-                            <div className="glass rounded-[3rem] p-10 mb-8 border-none relative overflow-hidden shadow-xl">
-                                <h3 className="text-spark-blue text-[10px] font-black uppercase tracking-widest mb-1 italic opacity-60 text-center">
-                                    Consumo ({filtroTempo.toUpperCase()})
+                        <div className="tab-transition">
+                            {/* Dashboard */}
+                            <div className="glass rounded-[3rem] p-10 mb-8 border-none relative overflow-hidden shadow-xl text-center">
+                                <h3 className="text-spark-blue text-[10px] font-black uppercase tracking-widest mb-1 italic opacity-60">
+                                    Consumo ({filtroTempo})
                                 </h3>
-                                <div className="flex justify-center items-baseline gap-2 mb-6">
-                                    <p className="text-5xl font-black italic tracking-tighter">R$ {gastoNoFiltro.toLocaleString('pt-BR')}</p>
-                                </div>
+                                <p className="text-5xl font-black italic tracking-tighter text-slate-900 dark:text-white mb-6">
+                                    R$ {gastoNoFiltro.toLocaleString('pt-BR')}
+                                </p>
                                 <div className="h-3 w-full bg-slate-200 dark:bg-white/10 rounded-full p-[2px] overflow-hidden">
-                                    <div className="h-full spark-gradient rounded-full transition-all duration-1000" style={{ width: `${Math.min((gastoNoFiltro/metas.Geral)*100),100}%` }}></div>
+                                    <div className="h-full spark-gradient rounded-full" style={{ width: `${Math.min((gastoNoFiltro/metas.Geral)*100),100}%` }}></div>
                                 </div>
                             </div>
 
                             {/* Entrada de Dados */}
                             <div className="glass rounded-[2.5rem] p-8 mb-8 border-none shadow-2xl">
-                                <input type="number" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="0.00" className="w-full bg-transparent text-center text-7xl font-black outline-none mb-4 tracking-tighter text-slate-900 dark:text-white"/>
-                                <input type="text" value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Descrição" className="w-full bg-slate-100 dark:bg-white/5 rounded-2xl p-4 mb-8 text-center text-sm font-bold outline-none text-slate-800 dark:text-white"/>
+                                <input type="number" inputMode="decimal" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="0.00" className="w-full bg-transparent text-center text-7xl font-black outline-none mb-4 tracking-tighter text-slate-900 dark:text-white placeholder:opacity-5"/>
+                                <input type="text" value={nota} onChange={(e) => setNota(e.target.value)} placeholder="O que o Senhor comprou?" className="w-full bg-slate-100 dark:bg-white/5 rounded-2xl p-4 mb-8 text-center text-sm font-bold outline-none text-slate-800 dark:text-white"/>
                                 
                                 <div className="flex gap-2 overflow-x-auto pb-4 mb-8 spark-scrollbar">
                                     {Object.keys(metas).filter(k => k !== 'Geral').map(cat => (
-                                        <button key={cat} onClick={() => setCategoria(cat)} className={`px-6 py-4 rounded-2xl text-[10px] font-black uppercase transition-all flex-shrink-0 ${categoria === cat ? 'bg-spark-blue text-white scale-105' : 'bg-slate-100 dark:bg-white/5 opacity-40'}`}>
+                                        <button key={cat} onClick={() => setCategoria(cat)} className={`px-6 py-4 rounded-2xl text-[10px] font-black uppercase transition-all flex-shrink-0 btn-active ${categoria === cat ? 'bg-spark-blue text-white shadow-lg' : 'bg-slate-100 dark:bg-white/5 opacity-40'}`}>
                                             {cat}
                                         </button>
                                     ))}
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
-                                    <button onClick={() => lancar('saida')} className="bg-spark-blue text-white py-6 rounded-3xl font-black uppercase text-xs tracking-widest shadow-xl">Gasto</button>
-                                    <button onClick={() => lancar('entrada')} className="border-2 border-spark-green text-spark-green py-6 rounded-3xl font-black uppercase text-xs tracking-widest">Entrada</button>
+                                    <button onClick={() => lancar('saida')} className="bg-spark-blue text-white py-6 rounded-3xl font-black uppercase text-xs tracking-widest shadow-xl btn-active">Gasto</button>
+                                    <button onClick={() => lancar('entrada')} className="border-2 border-spark-green text-spark-green py-6 rounded-3xl font-black uppercase text-xs tracking-widest btn-active">Entrada</button>
                                 </div>
                             </div>
 
-                            {/* MÓDULO DE INTELIGÊNCIA: BUSCA E FILTROS */}
+                            {/* Busca e Filtros */}
                             <div className="mb-6 space-y-4">
+                                <input type="text" placeholder="Buscar no log..." value={busca} onChange={(e) => setBusca(e.target.value)} className="w-full glass rounded-2xl py-4 px-6 text-xs font-bold outline-none border-none focus:ring-2 ring-spark-blue/20 transition-all"/>
                                 <div className="flex gap-2">
-                                    <input 
-                                        type="text" 
-                                        placeholder="Buscar operação..." 
-                                        value={busca}
-                                        onChange={(e) => setBusca(e.target.value)}
-                                        className="flex-1 glass rounded-2xl py-3 px-5 text-xs font-bold outline-none border-none focus:ring-1 ring-spark-blue/50"
-                                    />
-                                </div>
-                                <div className="flex gap-2 justify-between">
                                     {['tudo', 'hoje', 'semana', 'mes'].map(f => (
-                                        <button 
-                                            key={f} 
-                                            onClick={() => setFiltroTempo(f)}
-                                            className={`flex-1 py-2 rounded-xl text-[9px] font-black uppercase transition-all ${filtroTempo === f ? 'bg-spark-blue text-white' : 'glass opacity-40'}`}
-                                        >
-                                            {f}
-                                        </button>
+                                        <button key={f} onClick={() => setFiltroTempo(f)} className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase btn-active ${filtroTempo === f ? 'bg-spark-blue text-white shadow-md' : 'glass opacity-40'}`}>{f}</button>
                                     ))}
                                 </div>
                             </div>
 
-                            {/* Feed Filtrado */}
-                            <div className="space-y-4 px-2">
-                                {transacoesFiltradas.slice(0, 20).map(t => (
-                                    <div key={t.id} className="glass p-6 rounded-[2rem] flex justify-between items-center border-none shadow-sm">
-                                        <div>
+                            {/* Feed de Operações com ÍCONES */}
+                            <div className="space-y-4">
+                                {transacoesFiltradas.length > 0 ? transacoesFiltradas.slice(0, 15).map(t => (
+                                    <div key={t.id} className="glass p-5 rounded-[2rem] flex items-center gap-5 animate-in fade-in slide-in-from-bottom-2">
+                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${t.tipo === 'entrada' ? 'bg-spark-green/10 text-spark-green' : 'bg-spark-blue/10 text-spark-blue opacity-80'}`}>
+                                            <Icone nome={t.tipo === 'entrada' ? 'Receita' : t.categoria} />
+                                        </div>
+                                        <div className="flex-1">
                                             <div className="flex items-center gap-2 mb-1">
                                                 <span className="text-[9px] font-black uppercase opacity-40">{t.categoria}</span>
                                                 <span className={`text-[9px] font-black italic ${t.metodo === 'Crédito' ? 'text-red-500' : 'text-spark-blue opacity-70'}`}>{t.metodo}</span>
                                             </div>
-                                            <p className="text-sm font-bold opacity-80">{t.nota}</p>
+                                            <p className="text-sm font-bold text-slate-800 dark:text-white">{t.nota}</p>
                                         </div>
                                         <div className="text-right">
                                             <p className={`text-xl font-black italic ${t.tipo === 'entrada' ? 'text-spark-green' : (t.metodo === 'Crédito' ? 'text-red-500' : 'text-slate-800 dark:text-white')}`}>
@@ -203,12 +203,29 @@
                                             <p className="text-[9px] opacity-20 font-bold">{t.data}</p>
                                         </div>
                                     </div>
-                                ))}
-                                {transacoesFiltradas.length === 0 && (
-                                    <p className="text-center opacity-20 py-10 font-black uppercase text-xs">Nenhuma operação encontrada</p>
+                                )) : (
+                                    <div className="py-20 text-center opacity-20">
+                                        <Icone nome="Geral" className="w-12 h-12 mx-auto mb-4" />
+                                        <p className="font-black uppercase text-[10px] tracking-widest text-slate-500">Nenhum registro encontrado, mestre.</p>
+                                    </div>
                                 )}
                             </div>
-                        </>
+                        </div>
+                    )}
+
+                    {aba === 'config' && (
+                        <div className="tab-transition space-y-3">
+                             <h2 className="text-xl font-black uppercase mb-6 italic tracking-tighter text-slate-500">Ajuste de Metas</h2>
+                             {Object.keys(metas).map(cat => (
+                                <div key={cat} className="glass p-6 rounded-[2rem] flex justify-between items-center">
+                                    <div className="flex items-center gap-4">
+                                        <Icone nome={cat} className="w-5 h-5 text-spark-blue opacity-40" />
+                                        <span className="font-black text-[10px] uppercase opacity-40">{cat}</span>
+                                    </div>
+                                    <input type="number" value={metas[cat]} onChange={(e) => setMetas({...metas, [cat]: parseFloat(e.target.value) || 0})} className="bg-transparent text-right font-black text-spark-blue outline-none w-24 text-lg"/>
+                                </div>
+                            ))}
+                        </div>
                     )}
                 </div>
             );
