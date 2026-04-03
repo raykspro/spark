@@ -23,6 +23,12 @@
         .btn-active:active { transform: scale(0.92); filter: brightness(1.2); }
         .tab-transition { animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* CORREÇÃO DA BARRA BRANCA - MESTRE */
+        .spark-scrollbar::-webkit-scrollbar { height: 3px; background: transparent; }
+        .spark-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .spark-scrollbar::-webkit-scrollbar-thumb { background: rgba(0, 102, 255, 0.4); border-radius: 10px; }
+        
         input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     </style>
 </head>
@@ -41,6 +47,7 @@
                 Investimento: <path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 17.08l1.5 1.41z" />,
                 Receita: <path d="M13 10V3L4 14h7v7l9-11h-7z" />,
                 Parcela: <path d="M7 11h2v2H7v-2zm14-5v14c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2h1V2h2v2h8V2h2v2h1c1.1 0 2 .9 2 2zM5 8h14V6H5v2zm14 12V10H5v10h14zm-4-7h2v-2h-2v2zm-4 0h2v-2h-2v2z" />,
+                Objetivo: <path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z" />,
                 Dashboard: <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />,
                 Geral: <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
             };
@@ -50,14 +57,13 @@
         function App() {
             const [transacoes, setTransacoes] = useState(() => JSON.parse(localStorage.getItem('spark_db_v6')) || []);
             const [metas, setMetas] = useState(() => JSON.parse(localStorage.getItem('spark_metas')) || { Geral: 2000, Alimentação: 500, Lazer: 300, Fatura: 1000, Transporte: 200, Saúde: 200, Investimento: 500 });
+            const [objetivos, setObjetivos] = useState(() => JSON.parse(localStorage.getItem('spark_objetivos')) || [{ nome: "Reserva Emergência", atual: 0, alvo: 5000 }]);
             const [isDark, setIsDark] = useState(() => localStorage.getItem('spark_theme') !== 'light');
             const [aba, setAba] = useState('home'); 
             const [valor, setValor] = useState('');
             const [categoria, setCategoria] = useState('Alimentação');
-            const [metodo, setMetodo] = useState('Pix');
             const [nota, setNota] = useState('');
             const [parcelas, setParcelas] = useState(1);
-            const [busca, setBusca] = useState('');
             const [filtroTempo, setFiltroTempo] = useState('mes');
 
             useEffect(() => {
@@ -68,6 +74,7 @@
 
             useEffect(() => { localStorage.setItem('spark_db_v6', JSON.stringify(transacoes)); }, [transacoes]);
             useEffect(() => { localStorage.setItem('spark_metas', JSON.stringify(metas)); }, [metas]);
+            useEffect(() => { localStorage.setItem('spark_objetivos', JSON.stringify(objetivos)); }, [objetivos]);
 
             const lancar = (tipo) => {
                 if (!valor) return;
@@ -76,41 +83,31 @@
                 const valorParcela = valorNumerico / parcelas;
                 for (let i = 0; i < parcelas; i++) {
                     const d = new Date(); d.setMonth(d.getMonth() + i);
-                    novas.push({ id: Date.now() + i, valor: valorParcela, tipo, categoria, metodo: parcelas > 1 ? 'Crédito' : metodo, nota: parcelas > 1 ? `${nota || 'Compra'} (${i + 1}/${parcelas})` : (nota || `Gasto ${categoria}`), timestamp: d.getTime(), data: d.toLocaleDateString('pt-BR') });
+                    novas.push({ id: Date.now() + i, valor: valorParcela, tipo, categoria, metodo: parcelas > 1 ? 'Crédito' : 'Pix', nota: parcelas > 1 ? `${nota || 'Compra'} (${i + 1}/${parcelas})` : (nota || `Operação ${categoria}`), timestamp: d.getTime(), data: d.toLocaleDateString('pt-BR') });
                 }
                 setTransacoes([...novas, ...transacoes]);
                 setValor(''); setNota(''); setParcelas(1);
             };
 
-            const filtradas = useMemo(() => {
-                let f = transacoes;
-                const hoje = new Date();
-                if (filtroTempo === 'hoje') f = f.filter(t => new Date(t.timestamp).toDateString() === hoje.toDateString());
-                else if (filtroTempo === 'mes') f = f.filter(t => new Date(t.timestamp).getMonth() === hoje.getMonth() && new Date(t.timestamp).getFullYear() === hoje.getFullYear());
-                if (busca) f = f.filter(t => t.nota.toLowerCase().includes(busca.toLowerCase()));
-                return f.sort((a,b) => b.timestamp - a.timestamp);
-            }, [transacoes, busca, filtroTempo]);
-
             const stats = useMemo(() => {
-                const totalEntradas = filtradas.filter(t => t.tipo === 'entrada').reduce((acc, t) => acc + t.valor, 0);
-                const totalSaidas = filtradas.filter(t => t.tipo === 'saida').reduce((acc, t) => acc + t.valor, 0);
+                const hoje = new Date();
+                const doMes = transacoes.filter(t => new Date(t.timestamp).getMonth() === hoje.getMonth() && new Date(t.timestamp).getFullYear() === hoje.getFullYear());
+                const totalSaidas = doMes.filter(t => t.tipo === 'saida').reduce((acc, t) => acc + t.valor, 0);
                 const porCategoria = {};
-                filtradas.filter(t => t.tipo === 'saida').forEach(t => {
-                    porCategoria[t.categoria] = (porCategoria[t.categoria] || 0) + t.valor;
-                });
-                return { totalEntradas, totalSaidas, porCategoria, balanco: totalEntradas - totalSaidas };
-            }, [filtradas]);
+                doMes.filter(t => t.tipo === 'saida').forEach(t => { porCategoria[t.categoria] = (porCategoria[t.categoria] || 0) + t.valor; });
+                return { totalSaidas, porCategoria };
+            }, [transacoes]);
 
             const saldoReal = transacoes.reduce((acc, t) => t.timestamp > Date.now() ? acc : (t.tipo === 'entrada' ? acc + t.valor : (t.metodo !== 'Crédito' ? acc - t.valor : acc)), 0);
 
             return (
                 <div className="p-4 max-w-2xl mx-auto">
-                    {/* Header Minimalista */}
+                    {/* Header Operacional */}
                     <div className="flex justify-between items-center mb-6 pt-4 px-2">
                         <div className="flex gap-4 items-center">
                             <div className="w-10 h-10 bg-spark-blue rounded-2xl flex items-center justify-center font-black italic text-white shadow-lg text-xl">S</div>
                             <div>
-                                <p className="text-[8px] opacity-40 uppercase font-black tracking-widest leading-none">Capital Disponível</p>
+                                <p className="text-[8px] opacity-40 uppercase font-black tracking-widest leading-none">Capital Senhor</p>
                                 <p className="text-xl font-black italic text-spark-green">R$ {saldoReal.toLocaleString('pt-BR')}</p>
                             </div>
                         </div>
@@ -120,18 +117,17 @@
                         </div>
                     </div>
 
-                    {/* Conteúdo por Aba */}
                     {aba === 'home' && (
                         <div className="tab-transition">
                             <div className="glass rounded-[3rem] p-10 mb-8 border-none text-center shadow-xl">
-                                <h3 className="text-spark-blue text-[10px] font-black uppercase tracking-widest mb-1 italic opacity-60">Gastos no Mês</h3>
+                                <h3 className="text-spark-blue text-[10px] font-black uppercase tracking-widest mb-1 italic opacity-60">Consumo Mensal</h3>
                                 <p className="text-5xl font-black italic tracking-tighter mb-6">R$ {stats.totalSaidas.toLocaleString('pt-BR')}</p>
                                 <div className="h-3 w-full bg-slate-200 dark:bg-white/10 rounded-full p-[2px] overflow-hidden">
                                     <div className="h-full spark-gradient rounded-full" style={{ width: `${Math.min((stats.totalSaidas/metas.Geral)*100),100}%` }}></div>
                                 </div>
                             </div>
 
-                            <div className="glass rounded-[2.5rem] p-8 mb-8 border-none shadow-2xl">
+                            <div className="glass rounded-[2.5rem] p-8 mb-8 border-none shadow-2xl relative">
                                 <input type="number" inputMode="decimal" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="0.00" className="w-full bg-transparent text-center text-7xl font-black outline-none mb-4 tracking-tighter placeholder:opacity-10"/>
                                 <input type="text" value={nota} onChange={(e) => setNota(e.target.value)} placeholder="O que o Senhor operou?" className="w-full bg-slate-100 dark:bg-white/5 rounded-2xl p-4 mb-6 text-center text-sm font-bold outline-none"/>
                                 
@@ -155,105 +151,87 @@
                                     <button onClick={() => lancar('entrada')} className="border-2 border-spark-green text-spark-green py-6 rounded-3xl font-black uppercase text-xs btn-active">Aportar</button>
                                 </div>
                             </div>
-
-                            <div className="mb-6 space-y-4">
-                                <input type="text" placeholder="Pesquisar..." value={busca} onChange={(e) => setBusca(e.target.value)} className="w-full glass rounded-2xl py-4 px-6 text-xs font-bold outline-none"/>
-                                <div className="flex gap-2">
-                                    {['tudo', 'hoje', 'mes'].map(f => (
-                                        <button key={f} onClick={() => setFiltroTempo(f)} className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase btn-active ${filtroTempo === f ? 'bg-spark-blue text-white shadow-md' : 'glass opacity-40'}`}>{f}</button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="space-y-4">
-                                {filtradas.map(t => (
-                                    <div key={t.id} className={`glass p-5 rounded-[2rem] flex items-center gap-5 ${t.timestamp > Date.now() ? 'opacity-40 grayscale-[0.5]' : ''}`}>
-                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${t.tipo === 'entrada' ? 'text-spark-green bg-spark-green/10' : 'text-spark-blue bg-spark-blue/10'}`}>
-                                            <Icone nome={t.nota.includes('/') ? 'Parcela' : (t.tipo === 'entrada' ? 'Receita' : t.categoria)} />
-                                        </div>
-                                        <div className="flex-1">
-                                            <p className="text-[9px] font-black uppercase opacity-30">{t.categoria} • {t.metodo}</p>
-                                            <p className="text-sm font-bold">{t.nota}</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className={`text-xl font-black italic ${t.tipo === 'entrada' ? 'text-spark-green' : 'text-slate-800 dark:text-white'}`}>R$ {t.valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
-                                            <p className="text-[9px] opacity-20">{t.data}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
                         </div>
                     )}
 
                     {aba === 'stats' && (
                         <div className="tab-transition space-y-6">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="glass p-6 rounded-[2.5rem] text-center border-none">
-                                    <p className="text-[8px] font-black uppercase opacity-40 mb-1">Entradas</p>
-                                    <p className="text-xl font-black text-spark-green italic">R$ {stats.totalEntradas.toLocaleString('pt-BR')}</p>
+                            {/* SEÇÃO DE OBJETIVOS ESPECÍFICOS */}
+                            <div className="glass p-8 rounded-[3rem] border-none shadow-xl">
+                                <div className="flex justify-between items-center mb-8">
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest italic opacity-60">Metas do Mestre</h3>
+                                    <button onClick={() => {
+                                        const nome = prompt("Nome do Objetivo:");
+                                        const alvo = parseFloat(prompt("Valor Alvo:"));
+                                        if(nome && alvo) setObjetivos([...objetivos, { nome, atual: 0, alvo }]);
+                                    }} className="bg-spark-blue/10 text-spark-blue px-4 py-2 rounded-xl text-[10px] font-black uppercase btn-active">+ Novo</button>
                                 </div>
-                                <div className="glass p-6 rounded-[2.5rem] text-center border-none">
-                                    <p className="text-[8px] font-black uppercase opacity-40 mb-1">Saídas</p>
-                                    <p className="text-xl font-black text-spark-blue italic">R$ {stats.totalSaidas.toLocaleString('pt-BR')}</p>
+                                <div className="space-y-8">
+                                    {objetivos.map((obj, idx) => (
+                                        <div key={idx} className="group relative">
+                                            <div className="flex justify-between items-end mb-3">
+                                                <div>
+                                                    <p className="text-xs font-black uppercase mb-1 tracking-tight">{obj.nome}</p>
+                                                    <p className="text-[10px] opacity-40 font-bold">R$ {obj.atual.toLocaleString()} / R$ {obj.alvo.toLocaleString()}</p>
+                                                </div>
+                                                <button onClick={() => {
+                                                    const v = parseFloat(prompt(`Quanto o Senhor quer adicionar em ${obj.nome}?`));
+                                                    if(v) {
+                                                        const novos = [...objetivos];
+                                                        novos[idx].atual += v;
+                                                        setObjetivos(novos);
+                                                    }
+                                                }} className="w-8 h-8 rounded-full bg-spark-green text-white flex items-center justify-center text-sm btn-active">↑</button>
+                                            </div>
+                                            <div className="h-4 w-full bg-slate-200 dark:bg-white/5 rounded-full p-[2px] overflow-hidden">
+                                                <div className="h-full bg-spark-green rounded-full shadow-[0_0_10px_rgba(16,185,129,0.3)]" style={{ width: `${Math.min((obj.atual/obj.alvo)*100), 100}%` }}></div>
+                                            </div>
+                                            <button onClick={() => {if(confirm("Remover meta?")) setObjetivos(objetivos.filter((_, i) => i !== idx))}} className="absolute -right-2 -top-2 opacity-0 group-hover:opacity-100 bg-red-500 text-white w-5 h-5 rounded-full text-[8px]">X</button>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
 
-                            <div className="glass p-8 rounded-[3rem] border-none">
-                                <h3 className="text-[10px] font-black uppercase tracking-widest mb-8 italic opacity-60">Consumo por Setor</h3>
+                            <div className="glass p-8 rounded-[3rem] border-none shadow-xl">
+                                <h3 className="text-[10px] font-black uppercase tracking-widest mb-8 italic opacity-60">Análise Setorial</h3>
                                 <div className="space-y-6">
                                     {Object.entries(stats.porCategoria).sort((a,b) => b[1] - a[1]).map(([cat, val]) => (
                                         <div key={cat}>
                                             <div className="flex justify-between text-[10px] font-black uppercase mb-2">
                                                 <span>{cat}</span>
-                                                <span className="opacity-40">R$ {val.toLocaleString('pt-BR')}</span>
+                                                <span className="opacity-40 italic">R$ {val.toLocaleString('pt-BR')}</span>
                                             </div>
-                                            <div className="h-2 w-full bg-slate-200 dark:bg-white/5 rounded-full overflow-hidden">
+                                            <div className="h-1.5 w-full bg-slate-200 dark:bg-white/5 rounded-full overflow-hidden">
                                                 <div className="h-full bg-spark-blue rounded-full" style={{ width: `${(val/stats.totalSaidas)*100}%` }}></div>
                                             </div>
                                         </div>
                                     ))}
-                                    {Object.keys(stats.porCategoria).length === 0 && <p className="text-center py-10 opacity-20 italic text-sm">Nenhum dado analítico no período.</p>}
                                 </div>
                             </div>
                         </div>
                     )}
 
                     {aba === 'config' && (
-                        <div className="tab-transition space-y-8">
-                             <section className="space-y-3">
-                                <h2 className="text-xl font-black uppercase italic text-slate-500 mb-6">Metas de Operação</h2>
-                                {Object.keys(metas).map(cat => (
-                                    <div key={cat} className="glass p-6 rounded-[2rem] flex justify-between items-center">
-                                        <span className="font-black text-[10px] uppercase opacity-40 italic">{cat}</span>
-                                        <input type="number" value={metas[cat]} onChange={(e) => setMetas({...metas, [cat]: parseFloat(e.target.value) || 0})} className="bg-transparent text-right font-black text-spark-blue outline-none w-24 text-lg"/>
-                                    </div>
-                                ))}
-                             </section>
-                             <section className="space-y-3">
-                                <h2 className="text-xl font-black uppercase italic text-slate-500 mb-6">Cofre do Sistema</h2>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <button onClick={() => {
-                                        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ transacoes, metas }));
-                                        const a = document.createElement('a'); a.setAttribute("href", dataStr); a.setAttribute("download", `spark_backup.json`); a.click();
-                                    }} className="glass p-6 rounded-[2rem] flex flex-col items-center gap-2 btn-active">💾 <span className="text-[9px] font-black uppercase">Backup</span></button>
-                                    <label className="glass p-6 rounded-[2rem] flex flex-col items-center gap-2 btn-active cursor-pointer text-center">📥 <span className="text-[9px] font-black uppercase">Restaurar</span><input type="file" accept=".json" onChange={(e) => {
-                                        const reader = new FileReader(); reader.onload = (ev) => { const json = JSON.parse(ev.target.result); setTransacoes(json.transacoes); setMetas(json.metas); alert("Restaurado, Senhor."); }; reader.readAsText(e.target.files[0]);
-                                    }} className="hidden"/></label>
+                        <div className="tab-transition space-y-6">
+                            <h2 className="text-xl font-black uppercase italic text-slate-500 ml-4">Orçamento Base</h2>
+                            {Object.keys(metas).map(cat => (
+                                <div key={cat} className="glass p-6 rounded-[2rem] flex justify-between items-center shadow-lg">
+                                    <span className="font-black text-[10px] uppercase opacity-40 italic">{cat}</span>
+                                    <input type="number" value={metas[cat]} onChange={(e) => setMetas({...metas, [cat]: parseFloat(e.target.value) || 0})} className="bg-transparent text-right font-black text-spark-blue outline-none w-24 text-lg"/>
                                 </div>
-                                <button onClick={() => {if(confirm("Mestre, apagar tudo?")) setTransacoes([])}} className="w-full p-6 rounded-[2rem] bg-red-500/10 text-red-500 font-black uppercase text-[10px] btn-active">Zerar Histórico</button>
-                             </section>
+                            ))}
                         </div>
                     )}
 
-                    {/* Dock de Navegação Superior (Mestre) */}
-                    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md glass rounded-[2.5rem] p-2 flex justify-between items-center shadow-2xl z-50">
-                        <button onClick={() => setAba('home')} className={`flex-1 py-4 flex justify-center rounded-[2rem] ${aba === 'home' ? 'spark-gradient text-white shadow-lg shadow-spark-blue/30' : 'opacity-40'}`}>
+                    {/* Dock de Comando (Mestre) */}
+                    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-md glass rounded-[3rem] p-3 flex justify-between items-center shadow-2xl z-50 border border-white/5">
+                        <button onClick={() => setAba('home')} className={`flex-1 py-4 flex justify-center rounded-[2.5rem] ${aba === 'home' ? 'spark-gradient text-white shadow-xl' : 'opacity-30'}`}>
                             <Icone nome="Geral" />
                         </button>
-                        <button onClick={() => setAba('stats')} className={`flex-1 py-4 flex justify-center rounded-[2rem] ${aba === 'stats' ? 'spark-gradient text-white shadow-lg shadow-spark-blue/30' : 'opacity-40'}`}>
-                            <Icone nome="Dashboard" />
+                        <button onClick={() => setAba('stats')} className={`flex-1 py-4 flex justify-center rounded-[2.5rem] ${aba === 'stats' ? 'spark-gradient text-white shadow-xl' : 'opacity-30'}`}>
+                            <Icone nome="Objetivo" />
                         </button>
-                        <button onClick={() => setAba('config')} className={`flex-1 py-4 flex justify-center rounded-[2rem] ${aba === 'config' ? 'spark-gradient text-white shadow-lg shadow-spark-blue/30' : 'opacity-40'}`}>
+                        <button onClick={() => setAba('config')} className={`flex-1 py-4 flex justify-center rounded-[2.5rem] ${aba === 'config' ? 'spark-gradient text-white shadow-xl' : 'opacity-30'}`}>
                             ⚙️
                         </button>
                     </div>
