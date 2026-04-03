@@ -8,12 +8,7 @@
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script>
-        tailwind.config = { 
-            darkMode: 'class',
-            theme: { extend: { colors: { spark: { dark: '#020617', blue: '#0066FF', green: '#10B981', red: '#EF4444' } } } }
-        }
-    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         :root { --accent-color: #0066FF; --bg-custom: #020617; --text-color: #f1f5f9; }
         * { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
@@ -24,7 +19,6 @@
         .btn-active:active { transform: scale(0.95); filter: brightness(1.2); }
         .tab-transition { animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     </style>
 </head>
 <body class="min-h-screen pb-32 select-none overflow-x-hidden font-sans">
@@ -38,42 +32,62 @@
                 History: <path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z" />,
                 Home: <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />,
                 Fingerprint: <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />,
-                Swap: <path d="M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3L5 6.99h3V14h2V6.99h3L9 3z" />,
+                Plus: <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />,
                 Trash: <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />,
-                Plus: <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                PDF: <path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3H19v1h1.5V11H19v2h-1.5V7h3v1.5zM9 9.5h1v-1H9v1zM14 11h1v-2.5h-1V11z" />,
+                // Categoria Icons
+                Alimentação: <path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z" />,
+                Lazer: <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S18.67 9 19.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />,
+                Fatura: <path d="M21 7.28V5c0-1.1-.9-2-2-2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-2.28c.59-.35 1-.98 1-1.72V9c0-.74-.41-1.37-1-1.72zM20 9v6h-7V9h7zM5 19V5h14v2h-6c-1.1 0-2 .9-2 2v6c0 1.1.9 2 2 2h6v2H5z" />,
+                Geral: <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z" />
             };
-            return <svg className={className} viewBox="0 0 24 24" fill="currentColor">{icones[nome]}</svg>;
+            return <svg className={className} viewBox="0 0 24 24" fill="currentColor">{icones[nome] || icones.Geral}</svg>;
         };
 
         function App() {
             const [isAuthenticated, setIsAuthenticated] = useState(false);
             const [aba, setAba] = useState('home');
-            
             const [accentColor, setAccentColor] = useState(() => localStorage.getItem('spark_accent') || '#0066FF');
             const [bgColor, setBgColor] = useState(() => localStorage.getItem('spark_bg') || '#020617');
             const [textColor, setTextColor] = useState(() => localStorage.getItem('spark_text') || '#f1f5f9');
-            
             const [transacoes, setTransacoes] = useState(() => JSON.parse(localStorage.getItem('spark_db_v6')) || []);
-            const [cartoes, setCartoes] = useState(() => JSON.parse(localStorage.getItem('spark_cartoes')) || []);
-            const [metas, setMetas] = useState({ Geral: 2000, Alimentação: 500, Lazer: 300, Fatura: 1000 });
-            
+            const [metas, setMetas] = useState(() => JSON.parse(localStorage.getItem('spark_metas')) || { Geral: 2000, Alimentação: 500, Lazer: 300, Fatura: 1000 });
             const [valor, setValor] = useState('');
             const [categoria, setCategoria] = useState('Alimentação');
             const [nota, setNota] = useState('');
-            const [dashOrder, setDashOrder] = useState(() => JSON.parse(localStorage.getItem('spark_order')) || ['fluxo', 'lancamento', 'cartoes']);
+
+            const presets = [
+                { nome: 'Cyber Blue', accent: '#0066FF', bg: '#020617', text: '#f1f5f9' },
+                { nome: 'Emerald City', accent: '#10B981', bg: '#061a14', text: '#ecfdf5' },
+                { nome: 'Crimson Dark', accent: '#EF4444', bg: '#1a0606', text: '#fef2f2' },
+                { nome: 'Gold Vault', accent: '#FBBF24', bg: '#1a1606', text: '#fffbeb' }
+            ];
 
             useEffect(() => {
                 localStorage.setItem('spark_db_v6', JSON.stringify(transacoes));
-                localStorage.setItem('spark_cartoes', JSON.stringify(cartoes));
+                localStorage.setItem('spark_metas', JSON.stringify(metas));
                 localStorage.setItem('spark_accent', accentColor);
                 localStorage.setItem('spark_bg', bgColor);
                 localStorage.setItem('spark_text', textColor);
-                localStorage.setItem('spark_order', JSON.stringify(dashOrder));
-                
                 document.documentElement.style.setProperty('--accent-color', accentColor);
                 document.documentElement.style.setProperty('--bg-custom', bgColor);
                 document.documentElement.style.setProperty('--text-color', textColor);
-            }, [transacoes, cartoes, accentColor, bgColor, textColor, dashOrder]);
+            }, [transacoes, metas, accentColor, bgColor, textColor]);
+
+            const exportarPDF = () => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                doc.setFontSize(20);
+                doc.text("SPARK OMNI VAULT - RELATÓRIO", 20, 20);
+                doc.setFontSize(10);
+                let y = 40;
+                transacoes.forEach((t, i) => {
+                    if (y > 280) { doc.addPage(); y = 20; }
+                    doc.text(`${t.data} - ${t.nota} (${t.categoria}): ${t.tipo === 'saida' ? '-' : '+'} R$ ${t.valor}`, 20, y);
+                    y += 10;
+                });
+                doc.save("spark_relatorio.pdf");
+            };
 
             const lancar = (tipo) => {
                 if (!valor) return;
@@ -82,46 +96,15 @@
                 setValor(''); setNota('');
             };
 
-            const addCartao = () => {
-                const nome = prompt("Nome do Cartão:");
-                const limite = prompt("Limite:");
-                if(nome && limite) setCartoes([...cartoes, { id: Date.now(), nome, limite }]);
-            };
-
-            const deletarRegistro = (id) => {
-                if(confirm("Deseja apagar este registro, Senhor?")) setTransacoes(transacoes.filter(t => t.id !== id));
-            };
-
-            const resetTotal = () => {
-                if(confirm("ALERTA: Isso apagará TODOS os seus dados. Prosseguir?")) {
-                    if(confirm("Confirmação final: Tem certeza mestre?")) {
-                        setTransacoes([]);
-                        setCartoes([]);
-                        alert("Cofre limpo.");
-                    }
-                }
-            };
-
-            const importarJSON = (e) => {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const data = JSON.parse(event.target.result);
-                    if(data.transacoes) setTransacoes(data.transacoes);
-                    if(data.cartoes) setCartoes(data.cartoes);
-                    alert("Dados restaurados, Senhor.");
-                };
-                reader.readAsText(e.target.files[0]);
-            };
-
-            const saldoReal = transacoes.reduce((acc, t) => t.tipo === 'entrada' ? acc + t.valor : acc - t.valor, 0);
             const totalSaidas = transacoes.filter(t => t.tipo === 'saida').reduce((acc, t) => acc + t.valor, 0);
+            const saldoReal = transacoes.reduce((acc, t) => t.tipo === 'entrada' ? acc + t.valor : acc - t.valor, 0);
 
             if (!isAuthenticated) return (
                 <div className="fixed inset-0 flex flex-col items-center justify-center p-8 z-[100] tab-transition">
                     <div className="w-24 h-24 rounded-[2.5rem] flex items-center justify-center font-black italic text-white shadow-2xl text-5xl mb-12 accent-bg">S</div>
                     <button onClick={() => setIsAuthenticated(true)} className="glass w-full max-w-xs py-8 rounded-[2rem] flex flex-col items-center gap-4 btn-active">
                         <Icone nome="Fingerprint" className="w-12 h-12 accent-text" />
-                        <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Entrar como Mestre</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Mestre Identificado</span>
                     </button>
                 </div>
             );
@@ -131,79 +114,59 @@
                     <div className="flex justify-between items-center mb-8 pt-4">
                         <div className="flex gap-4 items-center">
                             <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-black italic text-white shadow-lg text-2xl accent-bg">S</div>
-                            <div>
-                                <p className="text-[10px] opacity-40 uppercase font-black italic">Patrimônio</p>
-                                <p className="text-2xl font-black italic text-spark-green">R$ {saldoReal.toLocaleString('pt-BR')}</p>
-                            </div>
+                            <div><p className="text-[10px] opacity-40 uppercase font-black italic">Patrimônio</p><p className="text-2xl font-black italic text-spark-green">R$ {saldoReal.toLocaleString('pt-BR')}</p></div>
                         </div>
                     </div>
 
                     {aba === 'home' && (
                         <div className="tab-transition space-y-6">
-                            {dashOrder.map((item, idx) => (
-                                <div key={item}>
-                                    {item === 'fluxo' && (
-                                        <div className="glass rounded-[3rem] p-10 text-center relative">
-                                            <h3 className="text-[10px] font-black uppercase mb-2 opacity-60">Fluxo de Saída</h3>
-                                            <p className="text-5xl font-black italic tracking-tighter mb-6">R$ {totalSaidas.toLocaleString('pt-BR')}</p>
-                                            <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
-                                                <div className="h-full accent-bg" style={{ width: `${Math.min((totalSaidas/metas.Geral)*100, 100)}%` }}></div>
-                                            </div>
-                                        </div>
-                                    )}
-                                    {item === 'lancamento' && (
-                                        <div className="glass rounded-[2.5rem] p-8 space-y-4">
-                                            <div className="text-center">
-                                                <input type="number" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="0.00" className="w-full bg-transparent text-center text-6xl font-black outline-none mb-2 accent-text"/>
-                                                <input type="text" value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Título da operação..." className="w-full bg-transparent text-center text-sm font-bold opacity-40 outline-none"/>
-                                            </div>
-                                            <select value={categoria} onChange={(e) => setCategoria(e.target.value)} className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-xs font-black uppercase outline-none text-center appearance-none">
-                                                {Object.keys(metas).map(cat => <option key={cat} value={cat} className="bg-slate-900">{cat}</option>)}
-                                            </select>
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <button onClick={() => lancar('saida')} className="py-6 rounded-3xl font-black uppercase text-xs btn-active bg-spark-red text-white">Debitar</button>
-                                                <button onClick={() => lancar('entrada')} className="py-6 rounded-3xl font-black uppercase text-xs btn-active border-2 border-spark-green text-spark-green">Aportar</button>
-                                            </div>
-                                        </div>
-                                    )}
-                                    {item === 'cartoes' && (
-                                        <div className="glass p-8 rounded-[2.5rem]">
-                                            <div className="flex justify-between items-center mb-4">
-                                                <h2 className="text-xs font-black uppercase opacity-40">Cartões do Senhor</h2>
-                                                <button onClick={addCartao} className="accent-text"><Icone nome="Plus" className="w-5 h-5"/></button>
-                                            </div>
-                                            <div className="space-y-4">
-                                                {cartoes.length > 0 ? cartoes.map(c => (
-                                                    <div key={c.id} className="flex justify-between items-center border-b border-white/5 pb-2">
-                                                        <span className="font-bold italic">{c.nome}</span>
-                                                        <span className="text-xs opacity-60">Lim: R$ {c.limite}</span>
-                                                    </div>
-                                                )) : <p className="text-xs opacity-20">Nenhum cartão registrado.</p>}
-                                            </div>
-                                        </div>
-                                    )}
+                            <div className="glass rounded-[3rem] p-10 text-center">
+                                <h3 className="text-[10px] font-black uppercase mb-2 opacity-60">Uso do Teto Geral</h3>
+                                <p className="text-5xl font-black italic tracking-tighter mb-2">R$ {totalSaidas.toLocaleString('pt-BR')}</p>
+                                <p className="text-sm font-black accent-text mb-6">{Math.round((totalSaidas/metas.Geral)*100)}% utilizado</p>
+                                <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                                    <div className="h-full accent-bg" style={{ width: `${Math.min((totalSaidas/metas.Geral)*100, 100)}%` }}></div>
                                 </div>
-                            ))}
+                            </div>
+
+                            <div className="glass rounded-[2.5rem] p-8 space-y-4">
+                                <input type="number" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="0.00" className="w-full bg-transparent text-center text-6xl font-black outline-none mb-2 accent-text"/>
+                                <input type="text" value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Título..." className="w-full bg-transparent text-center text-sm font-bold opacity-40 outline-none mb-4"/>
+                                <div className="flex gap-2 overflow-x-auto pb-4 spark-scrollbar">
+                                    {Object.keys(metas).map(cat => (
+                                        <button key={cat} onClick={() => setCategoria(cat)} className={`flex-shrink-0 px-6 py-3 rounded-xl text-[10px] font-black uppercase flex items-center gap-2 ${categoria === cat ? 'accent-bg text-white' : 'glass opacity-40'}`}>
+                                            <Icone nome={cat} className="w-3 h-3"/> {cat}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <button onClick={() => lancar('saida')} className="py-6 rounded-3xl font-black uppercase text-xs btn-active bg-spark-red text-white">Debitar</button>
+                                    <button onClick={() => lancar('entrada')} className="py-6 rounded-3xl font-black uppercase text-xs btn-active border-2 border-spark-green text-spark-green">Aportar</button>
+                                </div>
+                            </div>
                         </div>
                     )}
 
                     {aba === 'history' && (
                         <div className="tab-transition space-y-3">
-                            <h2 className="text-xs font-black uppercase opacity-40 ml-4 mb-4">Registros</h2>
+                            <div className="flex justify-between items-center ml-4 mb-4">
+                                <h2 className="text-xs font-black uppercase opacity-40">Registros</h2>
+                                <button onClick={exportarPDF} className="glass p-3 rounded-xl accent-text"><Icone nome="PDF" className="w-5 h-5"/></button>
+                            </div>
                             {transacoes.map(t => (
                                 <div key={t.id} className="glass p-5 rounded-[1.5rem] flex justify-between items-center group">
                                     <div className="flex gap-4 items-center">
-                                        <div className={`w-1 h-8 rounded-full ${t.tipo === 'entrada' ? 'bg-spark-green' : 'bg-spark-red'}`}></div>
+                                        <div className={`p-3 rounded-xl ${t.tipo === 'entrada' ? 'bg-spark-green/10 text-spark-green' : 'bg-spark-red/10 text-spark-red'}`}>
+                                            <Icone nome={t.categoria} className="w-5 h-5"/>
+                                        </div>
                                         <div>
                                             <p className="font-black text-sm italic">{t.nota}</p>
                                             <p className="text-[9px] opacity-30 font-bold uppercase">{t.data} • {t.categoria}</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-4">
-                                        <p className={`font-black italic ${t.tipo === 'entrada' ? 'text-spark-green' : 'opacity-60'}`}>
-                                            {t.tipo === 'entrada' ? '+' : '-'} {t.valor.toLocaleString('pt-BR')}
-                                        </p>
-                                        <button onClick={() => deletarRegistro(t.id)} className="opacity-0 group-hover:opacity-20 text-spark-red"><Icone nome="Trash" className="w-4 h-4"/></button>
+                                        <p className={`font-black italic ${t.tipo === 'entrada' ? 'text-spark-green' : 'opacity-60'}`}>R$ {t.valor}</p>
+                                        <button onClick={() => setTransacoes(transacoes.filter(x => x.id !== t.id))} className="text-spark-red opacity-0 group-hover:opacity-100"><Icone nome="Trash" className="w-4 h-4"/></button>
                                     </div>
                                 </div>
                             ))}
@@ -213,36 +176,28 @@
                     {aba === 'config' && (
                         <div className="tab-transition space-y-6">
                             <div className="glass p-8 rounded-[2.5rem] space-y-4">
-                                <h2 className="text-xs font-black uppercase opacity-40 text-center">Laboratório Cromático</h2>
-                                <div className="grid grid-cols-3 gap-2">
-                                    <div className="text-center">
-                                        <label className="text-[8px] font-black uppercase block mb-1">Destaque</label>
-                                        <input type="color" value={accentColor} onChange={(e) => setAccentColor(e.target.value)} className="w-full h-10 bg-transparent cursor-pointer rounded-lg"/>
-                                    </div>
-                                    <div className="text-center">
-                                        <label className="text-[8px] font-black uppercase block mb-1">Fundo</label>
-                                        <input type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)} className="w-full h-10 bg-transparent cursor-pointer rounded-lg"/>
-                                    </div>
-                                    <div className="text-center">
-                                        <label className="text-[8px] font-black uppercase block mb-1">Fonte</label>
-                                        <input type="color" value={textColor} onChange={(e) => setTextColor(e.target.value)} className="w-full h-10 bg-transparent cursor-pointer rounded-lg"/>
-                                    </div>
+                                <h2 className="text-xs font-black uppercase opacity-40 text-center">Presets de Identidade</h2>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {presets.map(p => (
+                                        <button key={p.nome} onClick={() => { setAccentColor(p.accent); setBgColor(p.bg); setTextColor(p.text); }} className="p-4 rounded-2xl glass text-[10px] font-black uppercase text-left border-l-4" style={{borderColor: p.accent}}>
+                                            {p.nome}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
-
-                            <div className="glass p-8 rounded-[2.5rem] space-y-4">
-                                <h2 className="text-xs font-black uppercase opacity-40 text-center">Dados do Cofre</h2>
-                                <button onClick={() => {
-                                    const blob = new Blob([JSON.stringify({transacoes, cartoes})], {type: 'application/json'});
-                                    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'spark_backup.json'; a.click();
-                                }} className="w-full bg-white/5 py-4 rounded-xl text-[10px] font-black uppercase">Exportar JSON</button>
-                                <label className="w-full bg-white/5 py-4 rounded-xl text-[10px] font-black uppercase flex justify-center cursor-pointer">
-                                    Importar JSON
-                                    <input type="file" accept=".json" onChange={importarJSON} className="hidden"/>
-                                </label>
+                            
+                            <div className="glass p-8 rounded-[2.5rem] space-y-4 text-center">
+                                <h2 className="text-xs font-black uppercase opacity-40">Cofre de Dados</h2>
+                                <div className="flex gap-4">
+                                    <button onClick={() => {
+                                        const blob = new Blob([JSON.stringify({transacoes, metas})], {type: 'application/json'});
+                                        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'spark_backup.json'; a.click();
+                                    }} className="flex-1 glass py-4 rounded-xl text-[10px] font-black uppercase italic">Backup JSON</button>
+                                    <button onClick={() => {
+                                        if(confirm("Apagar tudo, Mestre?")) { setTransacoes([]); alert("Cofre resetado."); }
+                                    }} className="flex-1 glass py-4 rounded-xl text-[10px] font-black uppercase italic text-spark-red/40 hover:text-spark-red transition-all">Reset Total</button>
+                                </div>
                             </div>
-
-                            <button onClick={resetTotal} className="w-full py-4 text-[10px] font-black uppercase opacity-20 hover:opacity-100 hover:text-spark-red">Limpar Registros (Full Reset)</button>
                         </div>
                     )}
 
