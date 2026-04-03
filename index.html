@@ -38,7 +38,6 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        /* Estilização de Selects Customizados */
         select {
             appearance: none;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
@@ -46,6 +45,8 @@
             background-position: right 1rem center;
             background-size: 1em;
         }
+
+        .chart-container { filter: drop-shadow(0 0 10px rgba(0, 102, 255, 0.2)); }
     </style>
 </head>
 <body>
@@ -54,7 +55,7 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
-        // --- COMPONENTES DE ICONOGRAFIA ---
+        // --- SISTEMA DE ÍCONES OMNI ---
         const Icon = ({ name, className = "w-6 h-6" }) => {
             const paths = {
                 Home: <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>,
@@ -63,6 +64,7 @@
                 Search: <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>,
                 Delete: <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>,
                 User: <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>,
+                Edit: <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>,
                 Alimentação: <path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z"/>,
                 Lazer: <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S18.67 9 19.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>,
                 Fatura: <path d="M21 7.28V5c0-1.1-.9-2-2-2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-2.28c.59-.35 1-.98 1-1.72V9c0-.74-.41-1.37-1-1.72zM20 9v6h-7V9h7zM5 19V5h14v2h-6c-1.1 0-2 .9-2 2v6c0 1.1.9 2 2 2h6v2H5z"/>,
@@ -73,21 +75,20 @@
             return <svg className={className} viewBox="0 0 24 24" fill="currentColor">{paths[name] || <circle cx="12" cy="12" r="10" />}</svg>;
         };
 
-        // --- COMPONENTE DE AVATAR (MASTER) ---
-        const Avatar = ({ size = "12" }) => (
-            <div className={`w-${size} h-${size} rounded-full accent-bg flex items-center justify-center text-white font-black text-xs border-2 border-white/20 shadow-spark overflow-hidden`}>
-                <img src="assets/logo.png" className="w-full h-full object-cover" alt="Master" />
+        // --- AVATAR MASTER ---
+        const Avatar = ({ size = "12", photo = "assets/logo.png" }) => (
+            <div className={`w-${size} h-${size} rounded-full accent-bg flex items-center justify-center border-2 border-white/20 shadow-spark overflow-hidden`}>
+                <img src={photo} className="w-full h-full object-cover" alt="Mestre" onError={(e) => e.target.src='https://ui-avatars.com/api/?name=M&background=0066FF&color=fff'} />
             </div>
         );
 
-        // --- COMPONENTE GRÁFICO DE PIZZA (SVG ANALYTICS) ---
+        // --- MOTOR GRÁFICO (PIE ENGINE) ---
         const PieChart = ({ data, colors }) => {
             const total = Object.values(data).reduce((a, b) => a + b, 0);
             let cumulativePercent = 0;
-            
             if (total === 0) return (
                 <div className="w-full h-full rounded-full border-2 border-dashed border-white/10 flex items-center justify-center opacity-20">
-                    <span className="text-[8px] font-black uppercase text-center px-2">Vazio</span>
+                    <span className="text-[7px] font-black uppercase">Null</span>
                 </div>
             );
 
@@ -100,47 +101,43 @@
                 const x2 = Math.cos(2 * Math.PI * cumulativePercent);
                 const y2 = Math.sin(2 * Math.PI * cumulativePercent);
                 const largeArc = percent > 0.5 ? 1 : 0;
-                
-                return <path key={key} d={`M ${x1} ${y1} A 1 1 0 ${largeArc} 1 ${x2} ${y2} L 0 0`} fill={colors[key]} stroke="#020617" strokeWidth="0.02" />;
+                return <path key={key} d={`M ${x1} ${y1} A 1 1 0 ${largeArc} 1 ${x2} ${y2} L 0 0`} fill={colors[key]} stroke="#020617" strokeWidth="0.01" />;
             });
-
-            return <svg viewBox="-1 -1 2 2" className="w-full h-full -rotate-90 drop-shadow-2xl">{slices}</svg>;
+            return <svg viewBox="-1 -1 2 2" className="w-full h-full -rotate-90 drop-shadow-xl">{slices}</svg>;
         };
 
-        // --- NÚCLEO DA APLICAÇÃO (SPARK ENGINE) ---
+        // --- CORE APPLICATION ---
         function App() {
-            // Estados de Sessão e Interface
             const [isAuth, setIsAuth] = useState(false);
             const [tab, setTab] = useState('home');
             const [pass, setPass] = useState('');
             
-            // Estados de Dados (Persistência Local)
+            // Dados Persistentes
             const [transacoes, setTransacoes] = useState(() => JSON.parse(localStorage.getItem('spark_data')) || []);
-            const [masterName, setMasterName] = useState(() => localStorage.getItem('spark_master_name') || 'Mestre');
+            const [masterName, setMasterName] = useState(() => localStorage.getItem('spark_name') || 'MESTRE');
             const [accentColor, setAccentColor] = useState(() => localStorage.getItem('spark_accent') || '#0066FF');
-            
-            // Estados de Input e Filtros
+            const [metas, setMetas] = useState(() => JSON.parse(localStorage.getItem('spark_metas')) || { Alimentação: 1500, Lazer: 800, Fatura: 2500, Saúde: 500, Transporte: 600, Investimento: 2000 });
+
+            // Inputs Temporários
             const [valor, setValor] = useState('');
             const [nota, setNota] = useState('');
             const [categoria, setCategoria] = useState('Alimentação');
             const [filtroBusca, setFiltroBusca] = useState('');
             const [filtroMes, setFiltroMes] = useState(new Date().getMonth() + 1);
-            
+
             const catColors = { Alimentação: "#FF6B6B", Lazer: "#4DABF7", Fatura: "#FAB005", Saúde: "#20C997", Transporte: "#BE4BDB", Investimento: "#51CF66" };
 
-            // Sincronização com LocalStorage
             useEffect(() => {
                 localStorage.setItem('spark_data', JSON.stringify(transacoes));
-                localStorage.setItem('spark_master_name', masterName);
+                localStorage.setItem('spark_metas', JSON.stringify(metas));
+                localStorage.setItem('spark_name', masterName);
                 localStorage.setItem('spark_accent', accentColor);
                 document.documentElement.style.setProperty('--accent-color', accentColor);
-            }, [transacoes, masterName, accentColor]);
+            }, [transacoes, metas, masterName, accentColor]);
 
-            // Lógica Analítica (Memoized)
-            const saldoGeral = useMemo(() => 
-                transacoes.reduce((acc, t) => t.tipo === 'entrada' ? acc + t.valor : acc - t.valor, 0), [transacoes]
-            );
-
+            // Analytics logic
+            const saldoGeral = useMemo(() => transacoes.reduce((acc, t) => t.tipo === 'entrada' ? acc + t.valor : acc - t.valor, 0), [transacoes]);
+            
             const gastosPorCat = useMemo(() => {
                 const res = {}; 
                 Object.keys(catColors).forEach(c => {
@@ -151,140 +148,112 @@
                 return res;
             }, [transacoes, filtroMes]);
 
-            // Manipuladores de Ação
-            const handleAddTransaction = (tipo) => {
+            const totalSaidasMes = useMemo(() => Object.values(gastosPorCat).reduce((a, b) => a + b, 0), [gastosPorCat]);
+
+            const handleTransaction = (tipo) => {
                 if(!valor || valor <= 0) return;
-                const nova = {
+                const entry = {
                     id: Date.now(),
                     valor: parseFloat(valor),
                     tipo,
                     categoria,
-                    nota: nota || (tipo === 'entrada' ? 'Capital Injetado' : `Gasto em ${categoria}`),
+                    nota: nota || (tipo === 'entrada' ? 'Aporte Capital' : 'Fluxo Operacional'),
                     ts: Date.now(),
                     data: new Date().toLocaleDateString('pt-BR')
                 };
-                setTransacoes([nova, ...transacoes]);
-                setValor('');
-                setNota('');
+                setTransacoes([entry, ...transacoes]);
+                setValor(''); setNota('');
             };
 
-            const exportarPDF = () => {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
-                doc.setFontSize(22);
-                doc.text("SPARK OMNI VAULT - RELATÓRIO", 20, 20);
-                doc.setFontSize(12);
-                doc.text(`Patrimônio Líquido: R$ ${saldoGeral.toFixed(2)}`, 20, 35);
-                let y = 50;
-                transacoes.slice(0, 20).forEach(t => {
-                    doc.text(`${t.data} - ${t.nota}: R$ ${t.valor.toFixed(2)} (${t.tipo})`, 20, y);
-                    y += 10;
-                });
-                doc.save("spark_vault_report.pdf");
+            const exportPDF = () => {
+                try {
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF();
+                    doc.setFillColor(2, 6, 23); doc.rect(0, 0, 210, 297, 'F');
+                    doc.setTextColor(255, 255, 255); doc.setFontSize(24); doc.text("SPARK VAULT REPORT", 20, 30);
+                    doc.setFontSize(10); doc.setTextColor(0, 102, 255); doc.text(`MASTER: ${masterName}`, 20, 40);
+                    doc.setTextColor(255, 255, 255); doc.text(`PATRIMÔNIO: R$ ${saldoGeral.toFixed(2)}`, 20, 50);
+                    let y = 70;
+                    transacoes.slice(0, 30).forEach(t => {
+                        if(y > 280) { doc.addPage(); y = 20; }
+                        doc.text(`${t.data} | ${t.categoria.padEnd(12)} | ${t.tipo === 'entrada' ? '+' : '-'} R$ ${t.valor.toFixed(2)} | ${t.nota}`, 20, y);
+                        y += 7;
+                    });
+                    doc.save(`Spark_Relatorio_${Date.now()}.pdf`);
+                } catch(e) { alert("Erro ao gerar PDF."); }
             };
 
-            // TELA DE AUTENTICAÇÃO BIOMÉTRICA/PIN
+            // AUTH SCREEN
             if (!isAuth) {
                 return (
-                    <div className="fixed inset-0 bg-slate-950 flex flex-col items-center justify-center p-10 z-[9999]">
-                        <div className="w-24 h-24 mb-12 shadow-spark rounded-[2rem] overflow-hidden border-2 border-white/10 p-2 glass">
-                            <img src="assets/logo.png" className="w-full h-full object-contain" alt="Logo" />
+                    <div className="fixed inset-0 bg-slate-950 flex flex-col items-center justify-center p-12 z-[9999]">
+                        <div className="mb-10 relative">
+                            <Avatar size="32" />
+                            <div className="absolute inset-0 rounded-full border-4 border-accent animate-ping opacity-20"></div>
                         </div>
-                        <h2 className="text-[10px] font-black uppercase tracking-[0.4em] mb-8 opacity-40">Vault Biometric Verification</h2>
-                        <input 
-                            type="password" 
-                            placeholder="CÓDICE MASTER" 
-                            className="glass w-full max-w-xs p-6 rounded-3xl text-center text-2xl font-black outline-none mb-6 accent-border tracking-[0.5em]" 
-                            value={pass}
-                            onChange={e => setPass(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && (pass === '1234' || pass === '') && setIsAuth(true)}
-                        />
-                        <button 
-                            onClick={() => (pass === '1234' || pass === '') ? setIsAuth(true) : alert('Códice Inválido')}
-                            className="accent-bg w-full max-w-xs py-5 rounded-3xl font-black uppercase text-[10px] shadow-spark active:scale-95 transition-all tracking-widest"
-                        >
-                            Acessar Vault
-                        </button>
+                        <h2 className="text-[9px] font-black uppercase tracking-[0.6em] mb-10 text-white/40">Encrypted Access Required</h2>
+                        <div className="w-full max-w-xs space-y-4">
+                            <input type="password" placeholder="PIN" className="glass w-full p-6 rounded-[2rem] text-center text-4xl font-black outline-none border-2 border-transparent focus:border-accent tracking-[0.4em]" value={pass} onChange={e => setPass(e.target.value)} onKeyDown={e => e.key === 'Enter' && (pass === '1234' || pass === '') && setIsAuth(true)} />
+                            <button onClick={() => (pass === '1234' || pass === '') ? setIsAuth(true) : alert('Acesso Negado')} className="accent-bg w-full py-6 rounded-[2rem] font-black uppercase text-[10px] shadow-spark active:scale-95 tracking-widest text-white">Unlock Vault</button>
+                        </div>
                     </div>
                 );
             }
 
             return (
-                <div className="max-w-md mx-auto p-6 animate-fade">
-                    {/* CABEÇALHO DE STATUS DO VAULT */}
-                    <header className="flex justify-between items-center mb-10">
+                <div className="max-w-md mx-auto p-6 animate-fade pb-40">
+                    {/* TOP BAR */}
+                    <header className="flex justify-between items-center mb-12">
                         <div onClick={() => setTab('perfil')} className="cursor-pointer">
-                            <p className="text-[10px] font-black opacity-30 uppercase tracking-[0.2em] mb-1">Global Balance</p>
-                            <h1 className="text-4xl font-black italic tracking-tighter text-white">
-                                R$ {saldoGeral.toLocaleString('pt-BR', {minimumFractionDigits: 2})}
-                            </h1>
+                            <p className="text-[10px] font-black opacity-30 uppercase tracking-[0.2em] mb-1">Vault Liquidity</p>
+                            <h1 className="text-4xl font-black italic tracking-tighter text-white">R$ {saldoGeral.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</h1>
                         </div>
-                        <div className="relative group" onClick={() => setTab('perfil')}>
+                        <div onClick={() => setTab('perfil')} className="cursor-pointer active:scale-90 transition-transform">
                             <Avatar size="14" />
-                            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-slate-950 animate-pulse"></div>
                         </div>
                     </header>
 
-                    {/* CONTEÚDO DINÂMICO BASEADO EM TABS */}
-                    <main className="space-y-8 pb-32">
-                        
+                    <main className="space-y-10">
                         {tab === 'home' && (
-                            <div className="space-y-8 animate-fade">
-                                {/* MÓDULO DE INSERÇÃO DE DADOS */}
-                                <div className="glass rounded-[3.5rem] p-8 space-y-8 relative overflow-hidden">
-                                    <div className="absolute -top-10 -right-10 w-32 h-32 accent-bg opacity-10 rounded-full blur-3xl"></div>
-                                    
+                            <div className="space-y-10 animate-fade">
+                                {/* INPUT CONSOLE */}
+                                <div className="glass rounded-[4rem] p-10 space-y-10 relative">
                                     <div className="text-center">
-                                        <input 
-                                            type="number" 
-                                            placeholder="0,00" 
-                                            value={valor}
-                                            onChange={e => setValor(e.target.value)}
-                                            className="w-full bg-transparent text-center text-6xl font-black outline-none accent-text placeholder:opacity-10"
-                                        />
-                                        <input 
-                                            type="text" 
-                                            placeholder="NOTAS DA OPERAÇÃO..." 
-                                            value={nota}
-                                            onChange={e => setNota(e.target.value)}
-                                            className="w-full bg-transparent text-center text-[10px] font-black opacity-30 outline-none uppercase tracking-widest mt-2"
-                                        />
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <label className="text-[9px] font-black uppercase opacity-40 ml-4">Segmentação</label>
-                                        <div className="grid grid-cols-3 gap-2">
-                                            {Object.keys(catColors).map(cat => (
-                                                <button key={cat} onClick={() => setCategoria(cat)} 
-                                                    className={`py-3 rounded-2xl flex flex-col items-center gap-1 transition-all ${categoria === cat ? 'accent-bg text-white scale-105 shadow-lg border border-white/20' : 'glass opacity-40'}`}>
-                                                    <Icon name={cat} className="w-4 h-4" />
-                                                    <span className="text-[8px] font-black uppercase">{cat}</span>
-                                                </button>
-                                            ))}
+                                        <input type="number" placeholder="0,00" value={valor} onChange={e => setValor(e.target.value)} className="w-full bg-transparent text-center text-7xl font-black outline-none accent-text placeholder:opacity-5" />
+                                        <div className="flex justify-center mt-4">
+                                            <div className="glass px-4 py-1 rounded-full flex items-center gap-2">
+                                                <Icon name="Edit" className="w-3 h-3 opacity-30" />
+                                                <input type="text" placeholder="LOG DESC..." value={nota} onChange={e => setNota(e.target.value)} className="bg-transparent text-[9px] font-black opacity-40 outline-none uppercase tracking-widest w-32 text-center" />
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <button onClick={() => handleAddTransaction('saida')} className="py-6 rounded-[2rem] bg-rose-600/90 text-white font-black uppercase text-[10px] btn-press shadow-lg active:bg-rose-700">Débito</button>
-                                        <button onClick={() => handleAddTransaction('entrada')} className="py-6 rounded-[2rem] border-2 border-emerald-500 text-emerald-500 font-black uppercase text-[10px] btn-press active:bg-emerald-500/10">Crédito</button>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        {Object.keys(catColors).map(cat => (
+                                            <button key={cat} onClick={() => setCategoria(cat)} className={`py-4 rounded-[1.5rem] flex flex-col items-center gap-2 transition-all ${categoria === cat ? 'accent-bg text-white shadow-lg scale-105' : 'glass opacity-30'}`}>
+                                                <Icon name={cat} className="w-4 h-4" />
+                                                <span className="text-[7px] font-black uppercase tracking-tighter">{cat}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-5">
+                                        <button onClick={() => handleTransaction('saida')} className="py-7 rounded-[2.5rem] bg-rose-600 text-white font-black uppercase text-[10px] btn-press shadow-xl">Debit</button>
+                                        <button onClick={() => handleTransaction('entrada')} className="py-7 rounded-[2.5rem] border-2 border-emerald-500 text-emerald-500 font-black uppercase text-[10px] btn-press">Credit</button>
                                     </div>
                                 </div>
 
-                                {/* CARD DE RESUMO ANALÍTICO MENSAL */}
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="glass p-6 rounded-[2.5rem]">
-                                        <p className="text-[9px] font-black uppercase opacity-30 mb-2">Gastos Mês</p>
-                                        <h4 className="text-xl font-black italic text-rose-400 tracking-tighter">
-                                            R$ {Object.values(gastosPorCat).reduce((a,b) => a+b, 0).toLocaleString('pt-BR')}
-                                        </h4>
+                                {/* DASHBOARD PREVIEW */}
+                                <div className="grid grid-cols-2 gap-5">
+                                    <div className="glass p-8 rounded-[3rem] space-y-2">
+                                        <p className="text-[8px] font-black uppercase opacity-30 tracking-widest">Monthly Burn</p>
+                                        <h4 className="text-2xl font-black italic text-rose-500 tracking-tighter">R$ {totalSaidasMes.toLocaleString('pt-BR')}</h4>
                                     </div>
-                                    <div className="glass p-6 rounded-[2.5rem] flex items-center justify-center">
-                                        <div className="w-12 h-12 relative">
-                                            <PieChart data={gastosPorCat} colors={catColors} />
-                                        </div>
-                                        <div className="ml-3">
-                                            <p className="text-[9px] font-black uppercase opacity-30 leading-none">Mix</p>
-                                            <p className="text-[9px] font-black uppercase opacity-30">Analítico</p>
+                                    <div className="glass p-8 rounded-[3rem] flex items-center justify-between">
+                                        <div className="w-14 h-14 chart-container"><PieChart data={gastosPorCat} colors={catColors} /></div>
+                                        <div className="text-right">
+                                            <p className="text-[8px] font-black opacity-20 uppercase">Mix</p>
+                                            <p className="text-[8px] font-black opacity-20 uppercase">Data</p>
                                         </div>
                                     </div>
                                 </div>
@@ -292,182 +261,132 @@
                         )}
 
                         {tab === 'history' && (
-                            <div className="space-y-6 animate-fade">
-                                {/* PAINEL DE PERFORMANCE POR CATEGORIA */}
-                                <div className="glass rounded-[3rem] p-8 flex items-center gap-8 relative overflow-hidden">
-                                    <div className="w-32 h-32 relative flex-shrink-0">
+                            <div className="space-y-8 animate-fade">
+                                <div className="glass rounded-[3.5rem] p-10 flex items-center gap-10">
+                                    <div className="w-36 h-36 flex-shrink-0 relative">
                                         <PieChart data={gastosPorCat} colors={catColors} />
-                                        <div className="absolute inset-0 flex items-center justify-center">
-                                            <div className="w-16 h-16 bg-[#020617] rounded-full border border-white/5 flex items-center justify-center shadow-inner">
-                                                <Icon name="History" className="w-6 h-6 opacity-20" />
+                                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                            <div className="w-20 h-20 bg-slate-950 rounded-full border border-white/5 shadow-2xl flex items-center justify-center">
+                                                <Icon name="History" className="w-7 h-7 opacity-10" />
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="flex-1 space-y-2 no-scrollbar overflow-y-auto max-h-32">
-                                        {Object.entries(gastosPorCat).map(([cat, val]) => (
-                                            <div key={cat} className="flex justify-between items-center group">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-1.5 h-1.5 rounded-full" style={{backgroundColor: catColors[cat]}}></div>
-                                                    <span className="text-[9px] font-black uppercase opacity-40 group-hover:opacity-100">{cat}</span>
+                                    <div className="flex-1 space-y-3 no-scrollbar overflow-y-auto max-h-40 pr-2">
+                                        {Object.entries(gastosPorCat).sort((a,b) => b[1]-a[1]).map(([cat, val]) => (
+                                            <div key={cat} className="flex justify-between items-center">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-2 h-2 rounded-full" style={{backgroundColor: catColors[cat]}}></div>
+                                                    <span className="text-[9px] font-black uppercase opacity-40">{cat}</span>
                                                 </div>
-                                                <span className="text-[9px] font-black italic">R$ {val.toFixed(0)}</span>
+                                                <span className="text-[10px] font-black italic text-white/80">R$ {val.toFixed(0)}</span>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
 
-                                {/* SISTEMA DE FILTRAGEM AVANÇADA */}
-                                <div className="flex gap-3">
-                                    <div className="flex-1 glass p-4 rounded-3xl flex items-center gap-3">
+                                <div className="flex gap-4">
+                                    <div className="flex-1 glass p-5 rounded-[2rem] flex items-center gap-4">
                                         <Icon name="Search" className="opacity-20 w-4 h-4" />
-                                        <input 
-                                            type="text" 
-                                            placeholder="FILTRAR VAULT..." 
-                                            value={filtroBusca} 
-                                            onChange={e => setFiltroBusca(e.target.value)}
-                                            className="bg-transparent flex-1 outline-none font-black text-[10px] uppercase tracking-widest text-white placeholder:opacity-10"
-                                        />
+                                        <input type="text" placeholder="FILTER VAULT..." value={filtroBusca} onChange={e => setFiltroBusca(e.target.value)} className="bg-transparent flex-1 outline-none font-black text-[10px] uppercase text-white placeholder:opacity-10 tracking-widest"/>
                                     </div>
-                                    <select 
-                                        value={filtroMes} 
-                                        onChange={e => setFiltroMes(e.target.value)} 
-                                        className="glass p-4 rounded-3xl font-black text-[10px] uppercase outline-none text-white px-8"
-                                    >
-                                        {Array.from({length: 12}, (_, i) => (
-                                            <option key={i+1} value={i+1} className="bg-slate-900">
-                                                {new Date(0, i).toLocaleString('pt-BR', {month: 'long'})}
-                                            </option>
-                                        ))}
+                                    <select value={filtroMes} onChange={e => setFiltroMes(e.target.value)} className="glass p-5 rounded-[2rem] font-black text-[10px] uppercase text-white px-8 outline-none border-none">
+                                        {Array.from({length: 12}, (_, i) => <option key={i+1} value={i+1} className="bg-slate-950">{new Date(0, i).toLocaleString('pt-BR', {month: 'long'})}</option>)}
                                     </select>
                                 </div>
 
-                                {/* LISTAGEM DE REGISTROS DO VAULT */}
-                                <div className="space-y-3">
-                                    {transacoes
-                                        .filter(t => t.nota.toLowerCase().includes(filtroBusca.toLowerCase()) && (new Date(t.ts).getMonth() + 1) === parseInt(filtroMes))
-                                        .map(t => (
-                                        <div key={t.id} className="glass p-5 rounded-[2rem] flex justify-between items-center group active:scale-[0.98] transition-all hover:bg-white/5">
-                                            <div className="flex items-center gap-4">
-                                                <div className="p-3 rounded-2xl bg-white/5 border border-white/5" style={{color: catColors[t.categoria]}}>
+                                <div className="space-y-4">
+                                    {transacoes.filter(t => t.nota.toLowerCase().includes(filtroBusca.toLowerCase()) && (new Date(t.ts).getMonth() + 1) === parseInt(filtroMes)).map(t => (
+                                        <div key={t.id} className="glass p-6 rounded-[2.5rem] flex justify-between items-center group active:scale-[0.98] transition-all">
+                                            <div className="flex items-center gap-5">
+                                                <div className="p-4 rounded-[1.5rem] bg-white/5 border border-white/5" style={{color: catColors[t.categoria]}}>
                                                     <Icon name={t.categoria} className="w-5 h-5"/>
                                                 </div>
                                                 <div>
-                                                    <h4 className="text-[11px] font-black uppercase text-white tracking-tight">{t.nota}</h4>
-                                                    <p className="text-[9px] opacity-30 font-bold uppercase tracking-tighter">{t.data} • {t.categoria}</p>
+                                                    <h4 className="text-[12px] font-black uppercase text-white tracking-tight">{t.nota}</h4>
+                                                    <p className="text-[9px] opacity-20 font-black uppercase tracking-tighter">{t.data} • {t.categoria}</p>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-4">
-                                                <span className={`text-xs font-black italic ${t.tipo === 'entrada' ? 'text-emerald-400' : 'text-white'}`}>
+                                            <div className="flex items-center gap-4 text-right">
+                                                <span className={`text-sm font-black italic ${t.tipo === 'entrada' ? 'text-emerald-400' : 'text-white'}`}>
                                                     {t.tipo === 'entrada' ? '+' : '-'} R$ {t.valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}
                                                 </span>
-                                                <button onClick={() => setTransacoes(transacoes.filter(x => x.id !== t.id))} className="p-2 opacity-0 group-hover:opacity-100 text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all">
-                                                    <Icon name="Delete" className="w-4 h-4"/>
-                                                </button>
+                                                <button onClick={() => setTransacoes(transacoes.filter(x => x.id !== t.id))} className="p-2 opacity-0 group-hover:opacity-100 text-rose-500 hover:scale-110 transition-all"><Icon name="Delete" className="w-4 h-4"/></button>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
-                                <button onClick={exportarPDF} className="w-full p-5 glass rounded-[2rem] text-[10px] font-black uppercase tracking-[0.3em] opacity-40 hover:opacity-100 transition-all border border-dashed border-white/10">
-                                    Gerar Extrato PDF Master
-                                </button>
+                                <button onClick={exportPDF} className="w-full p-6 glass rounded-[2.5rem] text-[9px] font-black uppercase tracking-[0.4em] opacity-30 hover:opacity-100 transition-all border border-dashed border-white/10 mt-6">Generate System Log PDF</button>
                             </div>
                         )}
 
                         {tab === 'perfil' && (
-                            <div className="space-y-8 animate-fade">
-                                <div className="glass rounded-[3.5rem] p-10 text-center space-y-6">
-                                    <div className="relative inline-block">
-                                        <Avatar size="24" />
-                                        <div className="absolute bottom-0 right-0 p-2 accent-bg rounded-full border-4 border-slate-950">
-                                            <Icon name="Settings" className="w-4 h-4 text-white" />
-                                        </div>
+                            <div className="space-y-10 animate-fade">
+                                <div className="glass rounded-[4rem] p-12 text-center space-y-8 relative overflow-hidden">
+                                    <div className="absolute top-0 left-0 w-full h-2 accent-bg opacity-20"></div>
+                                    <div className="inline-block relative">
+                                        <Avatar size="28" />
+                                        <div className="absolute -bottom-2 -right-2 p-3 accent-bg rounded-full border-4 border-slate-950 shadow-xl"><Icon name="Edit" className="w-4 h-4 text-white" /></div>
                                     </div>
                                     <div>
-                                        <h2 className="text-2xl font-black italic">{masterName}</h2>
-                                        <p className="text-[10px] font-black uppercase opacity-30 tracking-[0.4em] mt-1">Nível de Acesso: Administrador</p>
+                                        <h2 className="text-3xl font-black italic text-white tracking-tighter">{masterName}</h2>
+                                        <p className="text-[8px] font-black uppercase opacity-20 tracking-[0.5em] mt-2">Security Status: Master Clearance</p>
                                     </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="glass p-5 rounded-3xl">
-                                            <p className="text-[9px] font-black opacity-30 uppercase mb-1">Operações</p>
-                                            <p className="text-xl font-black italic">{transacoes.length}</p>
-                                        </div>
-                                        <div className="glass p-5 rounded-3xl">
-                                            <p className="text-[9px] font-black opacity-30 uppercase mb-1">Ativo Total</p>
-                                            <p className="text-xl font-black italic">R$ {saldoGeral > 1000 ? (saldoGeral/1000).toFixed(1) + 'k' : saldoGeral.toFixed(0)}</p>
-                                        </div>
+                                    <div className="grid grid-cols-2 gap-5">
+                                        <div className="glass p-6 rounded-[2rem]"><p className="text-[8px] font-black opacity-20 uppercase mb-1">Logs</p><p className="text-2xl font-black italic">{transacoes.length}</p></div>
+                                        <div className="glass p-6 rounded-[2rem]"><p className="text-[8px] font-black opacity-20 uppercase mb-1">Flow</p><p className="text-2xl font-black italic">R$ {saldoGeral > 1000 ? (saldoGeral/1000).toFixed(1) + 'k' : saldoGeral.toFixed(0)}</p></div>
                                     </div>
-                                    <input 
-                                        type="text" 
-                                        value={masterName} 
-                                        onChange={e => setMasterName(e.target.value)}
-                                        className="w-full bg-white/5 p-5 rounded-3xl text-center font-black uppercase text-xs outline-none border border-white/5 focus:border-accent"
-                                        placeholder="EDITAR ALCUNHA MASTER"
-                                    />
+                                    <input type="text" value={masterName} onChange={e => setMasterName(e.target.value.toUpperCase())} className="w-full bg-white/5 p-6 rounded-[2rem] text-center font-black uppercase text-xs outline-none border border-white/10 focus:border-accent text-white" placeholder="RENAME MASTER" />
                                 </div>
                             </div>
                         )}
 
                         {tab === 'config' && (
-                            <div className="space-y-8 animate-fade">
-                                <div className="glass rounded-[3rem] p-8 space-y-8">
-                                    <h3 className="text-xs font-black uppercase opacity-30 tracking-[0.3em] text-center">Core System Settings</h3>
+                            <div className="space-y-10 animate-fade">
+                                <div className="glass rounded-[3.5rem] p-10 space-y-10">
+                                    <h3 className="text-[10px] font-black uppercase opacity-20 text-center tracking-[0.5em]">System Protocols</h3>
                                     
-                                    <div className="space-y-4">
-                                        <p className="text-[9px] font-black uppercase opacity-40 ml-2">Cromatização de Interface</p>
-                                        <div className="flex justify-between glass p-5 rounded-[2.5rem]">
+                                    <div className="space-y-5">
+                                        <p className="text-[8px] font-black uppercase opacity-40 ml-4">Accent Chroma</p>
+                                        <div className="flex justify-between glass p-6 rounded-[2.5rem]">
                                             {['#0066FF', '#8B5CF6', '#EC4899', '#10B981', '#F59E0B'].map(c => (
-                                                <button key={c} onClick={() => setAccentColor(c)} 
-                                                    className={`w-10 h-10 rounded-full border-4 transition-all ${accentColor === c ? 'border-white scale-125 shadow-spark' : 'border-transparent opacity-40'}`} 
-                                                    style={{backgroundColor: c}}></button>
+                                                <button key={c} onClick={() => setAccentColor(c)} className={`w-11 h-11 rounded-full border-4 transition-all ${accentColor === c ? 'border-white scale-125 shadow-spark' : 'border-transparent opacity-30 hover:opacity-100'}`} style={{backgroundColor: c}}></button>
                                             ))}
                                         </div>
                                     </div>
 
-                                    <div className="space-y-6 pt-6 border-t border-white/5">
-                                        <div className="flex justify-between items-center px-2">
-                                            <span className="text-[10px] font-black uppercase opacity-50">Backup em Nuvem</span>
-                                            <div className="w-12 h-6 glass rounded-full relative"><div className="absolute right-1 top-1 w-4 h-4 accent-bg rounded-full"></div></div>
-                                        </div>
-                                        <div className="flex justify-between items-center px-2">
-                                            <span className="text-[10px] font-black uppercase opacity-50">Modo Furtivo</span>
-                                            <div className="w-12 h-6 glass rounded-full relative"><div className="absolute left-1 top-1 w-4 h-4 bg-white/10 rounded-full"></div></div>
-                                        </div>
+                                    <div className="space-y-4">
+                                        <p className="text-[8px] font-black uppercase opacity-40 ml-4">Budget Thresholds</p>
+                                        {Object.keys(metas).map(cat => (
+                                            <div key={cat} className="flex items-center gap-5 glass p-5 rounded-[1.5rem] border border-white/5">
+                                                <Icon name={cat} className="w-4 h-4 opacity-20" />
+                                                <span className="text-[9px] font-black uppercase flex-1 opacity-60 text-white">{cat}</span>
+                                                <input type="number" value={metas[cat]} onChange={e => setMetas({...metas, [cat]: parseFloat(e.target.value) || 0})} className="bg-transparent w-24 text-right font-black accent-text outline-none text-xs text-white" />
+                                            </div>
+                                        ))}
                                     </div>
 
-                                    <button 
-                                        onClick={() => {if(confirm("Formatar todos os registros do Vault?")) { localStorage.clear(); location.reload(); }}} 
-                                        className="w-full glass p-6 rounded-3xl flex justify-between items-center btn-press hover:bg-rose-500/10 group transition-all"
-                                    >
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-rose-500">Purge Local Data</span>
-                                        <Icon name="Delete" className="w-4 h-4 text-rose-500 opacity-30" />
+                                    <button onClick={() => {if(confirm("Confirmar Formatação Total?")) { localStorage.clear(); location.reload(); }}} className="w-full glass p-7 rounded-[2.5rem] flex justify-between items-center text-rose-500 font-black uppercase text-[10px] hover:bg-rose-500/10 transition-colors border border-rose-500/20">
+                                        <span>Purge Local Database</span>
+                                        <Icon name="Delete" className="w-5 h-5 opacity-40" />
                                     </button>
                                 </div>
-                                <div className="text-center space-y-2 opacity-10">
-                                    <p className="text-[8px] font-black uppercase tracking-[0.8em]">Spark Omni Engine v2.5.4</p>
-                                    <p className="text-[7px] font-black uppercase">Encrypted Endpoint: 0x882...F42</p>
+                                <div className="text-center space-y-3 opacity-10 py-10">
+                                    <p className="text-[7px] font-black uppercase tracking-[0.8em]">Spark Omni Engine v2.5.9</p>
+                                    <p className="text-[6px] font-black uppercase">Secure Handshake: 0x882...F42</p>
                                 </div>
                             </div>
                         )}
                     </main>
 
-                    {/* BARRA DE NAVEGAÇÃO OMNI (FLOATING BAR) */}
-                    <nav className="fixed bottom-8 left-6 right-6 glass-heavy rounded-[2.5rem] p-4 flex items-center justify-around shadow-2xl z-[5000] border border-white/10 max-w-md mx-auto">
-                        <button onClick={() => setTab('perfil')} className={`flex-1 flex justify-center py-4 rounded-3xl transition-all ${tab === 'perfil' ? 'scale-125' : 'opacity-20 grayscale'}`}>
-                            <Avatar size="8" />
-                        </button>
-                        
-                        <button onClick={() => setTab('history')} className={`flex-1 flex justify-center py-4 rounded-3xl transition-all ${tab === 'history' ? 'accent-text bg-white/5 scale-110' : 'opacity-20 text-white'}`}>
-                            <Icon name="History" />
-                        </button>
-
-                        <button onClick={() => setTab('home')} className={`flex-[1.5] flex justify-center py-5 rounded-[2.5rem] relative transition-all ${tab === 'home' ? 'accent-bg text-white shadow-spark scale-110 -translate-y-2' : 'opacity-20 text-white'}`}>
+                    {/* NAVIGATION CONSOLE */}
+                    <nav className="fixed bottom-10 left-6 right-6 glass-heavy rounded-[3rem] p-5 flex items-center justify-around shadow-2xl z-[5000] border border-white/10 max-w-md mx-auto">
+                        <button onClick={() => setTab('perfil')} className={`flex-1 flex justify-center py-4 rounded-3xl transition-all ${tab === 'perfil' ? 'scale-125' : 'opacity-20 grayscale'}`}><Avatar size="9" /></button>
+                        <button onClick={() => setTab('history')} className={`flex-1 flex justify-center py-4 rounded-3xl transition-all ${tab === 'history' ? 'accent-text bg-white/5 scale-110' : 'opacity-20 text-white'}`}><Icon name="History" /></button>
+                        <button onClick={() => setTab('home')} className={`flex-[1.6] flex justify-center py-6 rounded-[3rem] relative transition-all ${tab === 'home' ? 'accent-bg text-white shadow-spark scale-110 -translate-y-4' : 'opacity-20 text-white'}`}>
                             <Icon name="Home" />
                             {tab === 'home' && <span className="absolute -top-1 -right-1 w-3 h-3 bg-white rounded-full animate-ping"></span>}
                         </button>
-
-                        <button onClick={() => setTab('config')} className={`flex-1 flex justify-center py-4 rounded-3xl transition-all ${tab === 'config' ? 'accent-text bg-white/5 scale-110' : 'opacity-20 text-white'}`}>
-                            <Icon name="Settings" />
-                        </button>
+                        <button onClick={() => setTab('config')} className={`flex-1 flex justify-center py-4 rounded-3xl transition-all ${tab === 'config' ? 'accent-text bg-white/5 scale-110' : 'opacity-20 text-white'}`}><Icon name="Settings" /></button>
                     </nav>
                 </div>
             );
