@@ -24,7 +24,7 @@
         .accent-bg { background-color: var(--accent-color) !important; }
         .accent-text { color: var(--accent-color) !important; }
         .accent-border { border-color: var(--accent-color) !important; }
-        .shadow-spark { shadow: 0 0 25px -5px var(--accent-color); }
+        .shadow-spark { box-shadow: 0 0 25px -5px var(--accent-color); }
         
         /* Animações */
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
@@ -73,7 +73,7 @@
             </div>
         );
 
-        // --- COMPONENTE DE GRÁFICO (NOVO) ---
+        // --- COMPONENTE DE GRÁFICO ---
         const MiniChart = ({ data, color }) => {
             if(!data || data.length < 2) return <div className="h-full w-full flex items-center justify-center opacity-20 text-[8px]">DADOS INSUFICIENTES</div>;
             const max = Math.max(...data);
