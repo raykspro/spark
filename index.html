@@ -2,8 +2,8 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SPARK | OMNI VAULT</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>SPARK | OMNI VAULT v3.5 - MASTER EDITION</title>
     
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
@@ -11,55 +11,83 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap');
         
         :root {
             --accent: #3b82f6;
+            --bg-deep: #050505;
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --safe: #22c55e;
+            --danger: #ef4444;
+        }
+
+        * {
+            -webkit-tap-highlight-color: transparent;
+            box-sizing: border-box;
+            outline: none !important;
         }
 
         body { 
             margin: 0; 
-            background: #050505; 
-            color: white; 
-            font-family: 'Inter', sans-serif;
+            background: var(--bg-deep); 
+            color: #ffffff; 
+            font-family: 'Plus Jakarta Sans', sans-serif;
             overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
         }
 
+        /* ENGINE DE VIDRO (GLASSMORPHISM) */
         .glass {
             background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(30px) saturate(150%);
+            -webkit-backdrop-filter: blur(30px) saturate(150%);
+            border: 1px solid var(--glass-border);
         }
 
-        .glass-dark {
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(40px);
+        .glass-active {
+            background: rgba(255, 255, 255, 0.07);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
         }
 
         .accent-bg { background-color: var(--accent); }
         .accent-text { color: var(--accent); }
-        .accent-border { border-color: var(--accent); }
+        .shadow-spark { box-shadow: 0 25px 60px -15px var(--accent); }
 
-        .shadow-spark {
-            box-shadow: 0 20px 50px -15px var(--accent);
+        /* KEYFRAMES DE ALTA FIDELIDADE */
+        @keyframes masterEntry {
+            0% { opacity: 0; transform: translateY(30px) scale(0.95); filter: blur(10px); }
+            100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
         }
 
-        @keyframes master-entry {
-            from { opacity: 0; transform: translateY(20px) scale(0.95); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 0 0px rgba(59, 130, 246, 0.4); }
+            100% { box-shadow: 0 0 0 20px rgba(59, 130, 246, 0); }
         }
 
-        .animate-master {
-            animation: master-entry 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        @keyframes shakeError {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
         }
 
-        input[type="number"]::-webkit-inner-spin-button { display: none; }
+        .animate-master { animation: masterEntry 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-shake { animation: shakeError 0.4s cubic-bezier(.36,.07,.19,.97) both; }
         
         .hide-scroll::-webkit-scrollbar { display: none; }
+        
+        /* TIPOGRAFIA PERSONALIZADA */
+        .font-mono-spark { font-family: 'JetBrains Mono', monospace; }
+        .tracking-tighter-spark { letter-spacing: -0.05em; }
+
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
     </style>
 
     <script>
@@ -67,7 +95,13 @@
             theme: {
                 extend: {
                     colors: {
-                        master: '#0a0a0a',
+                        master: '#050505',
+                        card: '#0a0a0a',
+                        accent: 'var(--accent)'
+                    },
+                    borderRadius: {
+                        'spark': '2.5rem',
+                        'master': '4rem'
                     }
                 }
             }
@@ -78,12 +112,32 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo, useRef } = React;
+        const { useState, useEffect, useMemo, useCallback, useRef } = React;
 
-        // Componente de Ícones Lucide
-        const Icon = ({ name, className }) => {
+        // --- COMPONENTE DE ÍCONES DINÂMICOS ---
+        const Icon = ({ name, className, strokeWidth = 2.5 }) => {
             const LucideIcon = lucide.icons[name];
-            return LucideIcon ? <LucideIcon className={className} /> : null;
+            return LucideIcon ? <LucideIcon className={className} strokeWidth={strokeWidth} /> : <lucide.icons.Zap className={className} />;
+        };
+
+        // --- COMPONENTE DE BOTÃO MASTER ---
+        const Button = ({ children, onClick, variant = 'primary', className = '', icon }) => {
+            const styles = {
+                primary: "accent-bg text-white shadow-spark font-black",
+                secondary: "glass text-white/70 hover:text-white font-bold",
+                danger: "bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white font-black",
+                success: "bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white font-black"
+            };
+
+            return (
+                <button 
+                    onClick={onClick}
+                    className={`relative overflow-hidden flex items-center justify-center gap-3 py-5 px-8 rounded-spark transition-all duration-500 active:scale-95 uppercase text-[10px] tracking-[0.2em] ${styles[variant]} ${className}`}
+                >
+                    {icon && <Icon name={icon} className="w-4 h-4" />}
+                    {children}
+                </button>
+            );
         };
 
         function App() {
@@ -91,47 +145,45 @@
             const [masterName, setMasterName] = useState(() => localStorage.getItem('spark_name') || 'MESTRE');
             const [masterPhoto, setMasterPhoto] = useState(() => localStorage.getItem('spark_photo') || '');
             const [accent, setAccent] = useState(() => localStorage.getItem('spark_accent') || '#3b82f6');
+            const [tetoGasto, setTetoGasto] = useState(() => parseFloat(localStorage.getItem('spark_teto')) || 5000);
             
             // --- ESTADOS FINANCEIROS ---
             const [transacoes, setTransacoes] = useState(() => {
-                const saved = localStorage.getItem('spark_data');
-                return saved ? JSON.parse(saved) : [];
+                try {
+                    const saved = localStorage.getItem('spark_data');
+                    return saved ? JSON.parse(saved) : [];
+                } catch (e) {
+                    console.error("Erro ao carregar dados, Senhor.");
+                    return [];
+                }
             });
-            const [tetoGasto, setTetoGasto] = useState(() => parseFloat(localStorage.getItem('spark_teto')) || 5000);
-            
-            // --- ESTADOS DE INTERFACE ---
+
+            // --- ESTADOS DE UI ---
             const [tab, setTab] = useState('home');
             const [isLocked, setIsLocked] = useState(true);
             const [password, setPassword] = useState('');
             const [isExporting, setIsExporting] = useState(false);
-            
-            // --- FORMULÁRIO ---
+
+        const [activeFilter, setActiveFilter] = useState('todos');
+            const [showSuccessToast, setShowSuccessToast] = useState(false);
+
+            // --- ESTADOS DE FORMULÁRIO DETALHADOS ---
             const [desc, setDesc] = useState('');
             const [valor, setValor] = useState('');
-            const [tipo, setTipo] = useState('despesa'); // 'receita' ou 'despesa'
+            const [tipo, setTipo] = useState('despesa');
+            const [categoria, setCategoria] = useState('Geral');
 
-            // Sincronização de Preferências
+            // --- PERSISTÊNCIA AUTOMATIZADA ---
             useEffect(() => {
                 localStorage.setItem('spark_name', masterName);
                 localStorage.setItem('spark_photo', masterPhoto);
                 localStorage.setItem('spark_accent', accent);
                 localStorage.setItem('spark_teto', tetoGasto);
-                document.documentElement.style.setProperty('--accent', accent);
-            }, [masterName, masterPhoto, accent, tetoGasto]);
-
-            useEffect(() => {
                 localStorage.setItem('spark_data', JSON.stringify(transacoes));
-            }, [transacoes]);
+                document.documentElement.style.setProperty('--accent', accent);
+            }, [masterName, masterPhoto, accent, tetoGasto, transacoes]);
 
-            // Lógica de Login Automático para o Senhor (Opcional)
-            const handleLogin = () => {
-                if (password === '1234') { // Senha padrão do sistema
-                    setIsLocked(false);
-                } else {
-                    alert("Acesso Negado, Senhor.");
-                }
-            };
-            // --- CÁLCULOS ANALÍTICOS (USEMEMO PARA PERFORMANCE) ---
+            // --- MOTOR ANALÍTICO (USEMEMO) ---
             const stats = useMemo(() => {
                 const totalReceitas = transacoes
                     .filter(t => t.tipo === 'receita')
@@ -143,318 +195,467 @@
 
                 const saldo = totalReceitas - totalDespesas;
                 const progressoTeto = Math.min((totalDespesas / tetoGasto) * 100, 100);
+                
+                // Cálculo de média diária (últimos 30 dias)
+                const trintaDiasAtras = new Date();
+                trintaDiasAtras.setDate(trintaDiasAtras.getDate() - 30);
+                
+                const gastosRecentes = transacoes.filter(t => 
+                    t.tipo === 'despesa' && new Date(t.timestamp) > trintaDiasAtras
+                ).reduce((acc, curr) => acc + curr.valor, 0);
 
-                return { totalReceitas, totalDespesas, saldo, progressoTeto };
+                return { 
+                    totalReceitas, 
+                    totalDespesas, 
+                    saldo, 
+                    progressoTeto,
+                    mediaDiaria: (gastosRecentes / 30).toFixed(2)
+                };
             }, [transacoes, tetoGasto]);
 
-            // --- AÇÕES DO SISTEMA ---
-            const addTransacao = () => {
-                if (!desc || !valor) return;
-                
-                const nova = {
-                    id: Date.now(),
-                    desc: desc.toUpperCase(),
+            // --- GESTÃO DE TRANSAÇÕES ---
+            const registrarMovimentacao = useCallback(() => {
+                if (!desc || !valor || parseFloat(valor) <= 0) {
+                    const inputArea = document.getElementById('form-area');
+                    inputArea.classList.add('animate-shake');
+                    setTimeout(() => inputArea.classList.remove('animate-shake'), 500);
+                    return;
+                }
+
+                const novaTransacao = {
+                    id: crypto.randomUUID(),
+                    timestamp: new Date().toISOString(),
+                    data: new Date().toLocaleDateString('pt-BR'),
+                    desc: desc.toUpperCase().trim(),
                     valor: parseFloat(valor),
                     tipo,
-                    data: new Date().toLocaleDateString('pt-BR')
+                    categoria
                 };
 
-                setTransacoes([nova, ...transacoes]);
+                setTransacoes(prev => [novaTransacao, ...prev]);
                 setDesc('');
                 setValor('');
-            };
+                setShowSuccessToast(true);
+                setTimeout(() => setShowSuccessToast(false), 3000);
+            }, [desc, valor, tipo, categoria]);
 
-            const deleteTransacao = (id) => {
-                if(confirm("Mestre, deseja remover este registro permanentemente?")) {
-                    setTransacoes(transacoes.filter(t => t.id !== id));
+            const eliminarRegistro = (id) => {
+                const confirmar = confirm("Mestre, este registro será apagado dos servidores locais. Confirmar?");
+                if (confirmar) {
+                    setTransacoes(prev => prev.filter(t => t.id !== id));
                 }
             };
 
-            // --- RENDERIZAÇÃO DO VAULT (TELA DE BLOQUEIO) ---
+            // --- LÓGICA DE ACESSO ---
+            const validarAcesso = () => {
+                if (password === '1234') { // Senha Master Padrão
+                    setIsLocked(false);
+                    setPassword('');
+                } else {
+                    const lockCard = document.getElementById('lock-card');
+                    lockCard.classList.add('animate-shake');
+                    setTimeout(() => lockCard.classList.remove('animate-shake'), 500);
+                    setPassword('');
+                }
+            };
+
+            // --- TELA DE BLOQUEIO (VAULT LOCK) ---
             if (isLocked) {
                 return (
-                    <div className="fixed inset-0 flex items-center justify-center bg-black z-[300] p-6">
-                        <div className="w-full max-w-sm space-y-8 text-center animate-master">
-                            <div className="relative inline-block">
-                                <div className="w-24 h-24 rounded-[2rem] accent-bg flex items-center justify-center mx-auto shadow-spark mb-4">
-                                    <Icon name="Zap" className="w-12 h-12 text-white" />
+                    <div className="fixed inset-0 z-[999] flex items-center justify-center bg-master p-6 overflow-hidden">
+                        <div className="absolute inset-0 opacity-10">
+                            <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] accent-bg blur-[150px] rounded-full"></div>
+                            <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-600 blur-[150px] rounded-full"></div>
+                        </div>
+
+                        <div id="lock-card" className="w-full max-w-sm glass rounded-master p-12 text-center relative z-10 animate-master border-white/5">
+                            <div className="relative inline-block mb-10">
+                                <div className="w-24 h-24 accent-bg rounded-[2.5rem] flex items-center justify-center mx-auto shadow-spark relative z-10">
+                                    <Icon name="ShieldCheck" className="w-12 h-12 text-white" />
                                 </div>
-                                <div className="absolute -top-2 -right-2 w-6 h-6 bg-white/10 rounded-full blur-xl animate-pulse"></div>
+                                <div className="absolute inset-0 accent-bg blur-2xl opacity-40 animate-pulse"></div>
+                            </div>
+
+                            <div className="space-y-2 mb-10">
+                                <h1 className="text-3xl font-black tracking-tighter-spark uppercase">Spark Vault</h1>
+                                <p className="text-[9px] font-bold opacity-30 uppercase tracking-[0.4em]">Biometria Requerida | Criptografia AES-256</p>
+                            </div>
+
+                            <div className="space-y-4">
+                                <input 
+                                    type="password" 
+                                    placeholder="INSIRA A CHAVE MASTER"
+                                    value={password}
+                                    onChange={e => setPassword(e.target.value)}
+                                    onKeyDown={e => e.key === 'Enter' && validarAcesso()}
+                                    className="w-full glass rounded-spark py-6 px-4 text-center font-mono-spark text-xl tracking-[0.6em] focus:glass-active transition-all border-white/5"
+                                />
+                                <Button onClick={validarAcesso} className="w-full py-6">
+                                    Desbloquear Sistema
+                                </Button>
                             </div>
                             
-                            <div className="space-y-2">
-                                <h1 className="text-2xl font-black tracking-tighter uppercase">Spark Omni</h1>
-                                <p className="text-[10px] font-bold opacity-30 uppercase tracking-[0.3em]">Protocolo de Segurança Ativo</p>
-                            </div>
-
-                            <input 
-                                type="password"
-                                placeholder="DIGITE A CHAVE MASTER"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="w-full glass rounded-3xl py-6 px-4 text-center text-sm font-black tracking-[0.5em] focus:accent-border outline-none transition-all"
-                                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-                            />
-
-                            <button 
-                                onClick={handleLogin}
-                                className="w-full py-6 rounded-3xl font-black uppercase text-xs tracking-widest bg-white text-black hover:scale-[1.02] active:scale-95 transition-all"
-                            >
-                                Acessar Vault
-                            </button>
+                            <p className="mt-10 text-[8px] font-medium opacity-20 uppercase tracking-widest">
+                                Protocolo de Segurança Ativo para {masterName}
+                            </p>
                         </div>
                     </div>
                 );
             }
-
-            // --- RENDERIZAÇÃO PRINCIPAL ---
+            
+            // --- RENDERIZAÇÃO DA INTERFACE MASTER ---
             return (
-                <div className="min-h-screen pb-32">
-                    {/* HEADER STATUS BAR */}
-                    <header className="p-8 flex items-center justify-between animate-master">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-2xl overflow-hidden border border-white/10 glass">
-                                {masterPhoto ? (
-                                    <img src={masterPhoto} className="w-full h-full object-cover" />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center accent-bg text-white font-black text-xl">
-                                        {masterName.charAt(0)}
-                                    </div>
-                                )}
-                            </div>
-                            <div>
-                                <p className="text-[10px] font-black opacity-30 uppercase tracking-widest">Bem-vindo, Senhor</p>
-                                <h2 className="text-sm font-black uppercase">{masterName}</h2>
-                            </div>
-                        </div>
-                        <button onClick={() => setIsLocked(true)} className="p-3 glass rounded-2xl opacity-50 hover:opacity-100 transition-all">
-                            <Icon name="Power" className="w-5 h-5" />
-                        </button>
-                    </header>
-
-                    <main className="px-6 space-y-8">
-                        {/* ABA HOME: DASHBOARD ANALÍTICO */}
-                        {tab === 'home' && (
-                            <div className="space-y-8 animate-master">
-                                {/* CARD DE SALDO PRINCIPAL */}
-                                <div className="glass rounded-[3.5rem] p-10 relative overflow-hidden shadow-2xl">
-                                    <div className="absolute top-0 right-0 w-40 h-40 accent-bg opacity-10 blur-[80px]"></div>
-                                    <p className="text-[10px] font-black opacity-40 uppercase tracking-[0.2em] mb-2">Patrimônio Líquido</p>
-                                    <h3 className="text-5xl font-black tracking-tighter">
-                                        <span className="text-sm opacity-30 mr-2 font-medium">R$</span>
-                                        {stats.saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                    </h3>
-                                    
-                                    <div className="mt-8 pt-8 border-t border-white/5 flex justify-between items-center">
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2 rounded-xl bg-green-500/10 text-green-500">
-                                                <Icon name="ArrowUpRight" className="w-4 h-4" />
-                                            </div>
-                                            <div>
-                                                <p className="text-[8px] font-bold opacity-30 uppercase">Entradas</p>
-                                                <p className="font-bold text-xs">R$ {stats.totalReceitas.toFixed(2)}</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2 rounded-xl bg-red-500/10 text-red-500">
-                                                <Icon name="ArrowDownLeft" className="w-4 h-4" />
-                                            </div>
-                                            <div>
-                                                <p className="text-[8px] font-bold opacity-30 uppercase">Saídas</p>
-                                                <p className="font-bold text-xs">R$ {stats.totalDespesas.toFixed(2)}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* MEDIDOR DE TETO DE GASTOS */}
-                                <div className="glass rounded-[2.5rem] p-6 space-y-4">
-                                    <div className="flex justify-between items-end">
-                                        <div>
-                                            <p className="text-[10px] font-black opacity-30 uppercase">Uso do Teto Mensal</p>
-                                            <p className="text-lg font-black">{stats.progressoTeto.toFixed(1)}%</p>
-                                        </div>
-                                        <p className="text-[10px] font-bold opacity-30">LIMITE: R$ {tetoGasto}</p>
-                                    </div>
-                                    <div className="h-3 w-full bg-white/5 rounded-full overflow-hidden p-[2px]">
-                                        <div 
-                                            className="h-full rounded-full accent-bg transition-all duration-1000"
-                                            style={{ width: `${stats.progressoTeto}%` }}
-                                        ></div>
-                                    </div>
-                                </div>
-                                {/* FORMULÁRIO DE ENTRADA RÁPIDA */}
-                                <div className="space-y-6">
-                                    <h4 className="text-[10px] font-black opacity-30 uppercase tracking-[0.3em] ml-2">Novo Registro</h4>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <button 
-                                            onClick={() => setTipo('receita')}
-                                            className={`py-5 rounded-3xl font-black text-[10px] uppercase tracking-widest transition-all ${tipo === 'receita' ? 'bg-green-500 text-white shadow-lg shadow-green-500/20 scale-105' : 'glass opacity-30'}`}
-                                        >
-                                            Receita
-                                        </button>
-                                        <button 
-                                            onClick={() => setTipo('despesa')}
-                                            className={`py-5 rounded-3xl font-black text-[10px] uppercase tracking-widest transition-all ${tipo === 'despesa' ? 'bg-red-500 text-white shadow-lg shadow-red-500/20 scale-105' : 'glass opacity-30'}`}
-                                        >
-                                            Despesa
-                                        </button>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <input 
-                                            type="text" 
-                                            placeholder="DESCRIÇÃO DO FLUXO"
-                                            value={desc}
-                                            onChange={e => setDesc(e.target.value.toUpperCase())}
-                                            className="w-full glass rounded-[2rem] py-6 px-8 text-xs font-bold border-white/5 focus:accent-border transition-all"
-                                        />
-                                        <div className="relative">
-                                            <span className="absolute left-8 top-1/2 -translate-y-1/2 text-[10px] font-bold opacity-30">R$</span>
-                                            <input 
-                                                type="number" 
-                                                placeholder="0,00"
-                                                value={valor}
-                                                onChange={e => setValor(e.target.value)}
-                                                className="w-full glass rounded-[2rem] py-6 pl-16 pr-8 text-xl font-black border-white/5 focus:accent-border transition-all"
-                                            />
-                                        </div>
-                                        <button 
-                                            onClick={addTransacao}
-                                            className="w-full accent-bg py-6 rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] shadow-spark hover:scale-[1.01] active:scale-95 transition-all"
-                                        >
-                                            Confirmar Lançamento
-                                        </button>
-                                    </div>
+                <div className="min-h-screen pb-48 select-none bg-master">
+                    {/* TOAST DE SUCESSO (FEEDBACK TÁTIL) */}
+                    <AnimatePresence>
+                        {showSuccessToast && (
+                            <div className="fixed top-12 left-1/2 -translate-x-1/2 z-[1000] animate-master">
+                                <div className="glass-active rounded-full py-4 px-8 border-green-500/30 flex items-center gap-3 shadow-2xl">
+                                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-green-500">Protocolo de Registro Concluído</span>
                                 </div>
                             </div>
                         )}
+                    </AnimatePresence>
 
-                        {/* ABA DE HISTÓRICO (LOGS) */}
-                        {tab === 'history' && (
-                            <div className="space-y-8 animate-master pb-20">
-                                <div className="flex items-end justify-between px-2">
-                                    <div>
-                                        <h2 className="text-3xl font-black uppercase tracking-tighter leading-none">Logs</h2>
-                                        <p className="text-[10px] font-bold opacity-30 uppercase tracking-[0.2em] mt-1">Registros de Auditoria</p>
-                                    </div>
-                                    <button 
-                                        onClick={() => { /* Lógica de exportação PDF será na Parte 4 */ }}
-                                        className="p-4 glass rounded-2xl accent-text hover:bg-white/5 transition-all"
-                                    >
-                                        <Icon name="Download" className="w-5 h-5" />
-                                    </button>
-                                </div>
-
-                                <div className="space-y-4">
-                                    {transacoes.length === 0 ? (
-                                        <div className="glass rounded-[3rem] p-20 text-center opacity-20">
-                                            <Icon name="Database" className="w-10 h-10 mx-auto mb-4" />
-                                            <p className="text-[10px] font-black uppercase tracking-widest">Nenhum dado encontrado</p>
-                                        </div>
+                    {/* HEADER DE STATUS DINÂMICO */}
+                    <header className="p-8 md:p-12 flex items-center justify-between animate-master max-w-4xl mx-auto">
+                        <div className="flex items-center gap-6 group">
+                            <div className="relative">
+                                <div className="w-16 h-16 rounded-[2rem] overflow-hidden glass p-1 transition-all duration-500 group-hover:accent-border border-white/5">
+                                    {masterPhoto ? (
+                                        <img src={masterPhoto} className="w-full h-full object-cover rounded-[1.8rem]" alt="Master" />
                                     ) : (
-                                        transacoes.map((t) => (
-                                            <div 
-                                                key={t.id} 
-                                                className="glass rounded-[2.5rem] p-6 flex items-center justify-between group hover:bg-white/[0.05] transition-all border-l-4"
-                                                style={{ borderLeftColor: t.tipo === 'receita' ? '#22c55e' : '#ef4444' }}
-                                            >
-                                                <div className="flex items-center gap-5">
-                                                    <div className={`p-4 rounded-2xl ${t.tipo === 'receita' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
-                                                        <Icon name={t.tipo === 'receita' ? "TrendingUp" : "TrendingDown"} className="w-5 h-5" />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-[8px] font-black opacity-30 uppercase mb-1">{t.data}</p>
-                                                        <h4 className="text-sm font-black tracking-tight">{t.desc}</h4>
-                                                    </div>
-                                                </div>
-                                                
-                                                <div className="flex items-center gap-6">
-                                                    <div className="text-right">
-                                                        <p className={`text-base font-black tracking-tighter ${t.tipo === 'receita' ? 'text-green-500' : 'text-white'}`}>
-                                                            <span className="text-[10px] opacity-30 mr-1 font-medium">R$</span>
-                                                            {t.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                                        </p>
-                                                    </div>
-                                                    <button 
-                                                        onClick={() => deleteTransacao(t.id)}
-                                                        className="opacity-0 group-hover:opacity-100 p-2 text-red-500/50 hover:text-red-500 transition-all"
-                                                    >
-                                                        <Icon name="Trash2" className="w-4 h-4" />
-                                                    </button>
+                                        <div className="w-full h-full accent-bg flex items-center justify-center text-white font-black text-2xl rounded-[1.8rem]">
+                                            {masterName.charAt(0)}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 border-4 border-master rounded-full"></div>
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-black uppercase tracking-tighter-spark leading-none">{masterName}</h2>
+                                <p className="text-[9px] font-bold opacity-30 uppercase tracking-[0.3em] mt-2 flex items-center gap-2">
+                                    <span className="accent-text inline-block">●</span> Sistema Operacional
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button 
+                                onClick={() => setIsLocked(true)}
+                                className="p-4 glass rounded-2xl opacity-40 hover:opacity-100 hover:glass-active transition-all group"
+                            >
+                                <Icon name="Power" className="w-5 h-5 group-hover:text-red-500 transition-colors" />
+                            </button>
+                        </div>
+                    </header>
+
+                    <main className="px-6 space-y-12 max-w-4xl mx-auto">
+                        {/* ABA HOME: O CENTRO DE COMANDO */}
+                        {tab === 'home' && (
+                            <div className="space-y-10 animate-master">
+                                {/* CARD DE PATRIMÔNIO LÍQUIDO (UX PREMIUM) */}
+                                <section className="relative group">
+                                    <div className="absolute inset-0 accent-bg opacity-5 blur-[120px] rounded-master pointer-events-none transition-all duration-700 group-hover:opacity-10"></div>
+                                    <div className="glass rounded-master p-12 relative overflow-hidden shadow-2xl border-white/5">
+                                        <div className="flex justify-between items-start mb-10">
+                                            <div>
+                                                <p className="text-[10px] font-black opacity-30 uppercase tracking-[0.3em] mb-3">Patrimônio Gerenciado</p>
+                                                <div className="flex items-baseline gap-3">
+                                                    <span className="text-lg font-bold opacity-20 accent-text">R$</span>
+                                                    <h3 className="text-6xl font-black tracking-tighter-spark">
+                                                        {stats.saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                    </h3>
                                                 </div>
                                             </div>
-                                        ))
+                                            <div className="p-4 glass rounded-3xl">
+                                                <Icon name="TrendingUp" className="w-6 h-6 accent-text" />
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="grid grid-cols-2 gap-8 pt-10 border-t border-white/5">
+                                            <div className="space-y-2">
+                                                <p className="text-[9px] font-black opacity-20 uppercase tracking-widest">Fluxo de Entrada</p>
+                                                <p className="text-xl font-bold text-green-500 flex items-center gap-2">
+                                                    <Icon name="ChevronUp" className="w-4 h-4" />
+                                                    {stats.totalReceitas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                </p>
+                                            </div>
+                                            <div className="space-y-2 text-right">
+                                                <p className="text-[9px] font-black opacity-20 uppercase tracking-widest">Fluxo de Saída</p>
+                                                <p className="text-xl font-bold text-red-500 flex items-center gap-2 justify-end">
+                                                    {stats.totalDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                    <Icon name="ChevronDown" className="w-4 h-4" />
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+
+                                {/* MEDIDOR DE TETO MENSAL (RADIAL PROGRESS SIMULATION) */}
+                                <div className="glass rounded-spark p-8 space-y-6">
+                                    <div className="flex justify-between items-end">
+                                        <div>
+                                            <h4 className="text-xs font-black uppercase tracking-widest mb-1 italic">Consumo do Teto</h4>
+                                            <p className="text-[10px] font-bold opacity-30 uppercase tracking-widest">Limite Definido: R$ {tetoGasto}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className={`text-2xl font-black ${stats.progressoTeto > 90 ? 'text-red-500' : 'text-white'}`}>
+                                                {stats.progressoTeto.toFixed(1)}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="h-4 w-full bg-white/5 rounded-full overflow-hidden p-[3px]">
+                                        <div 
+                                            className={`h-full rounded-full transition-all duration-[1.5s] ease-out shadow-[0_0_15px_rgba(59,130,246,0.3)] ${stats.progressoTeto > 85 ? 'bg-red-500' : 'accent-bg'}`}
+                                            style={{ width: `${stats.progressoTeto}%` }}
+                                        ></div>
+                                    </div>
+                                    <div className="flex justify-between items-center text-[9px] font-black opacity-20 uppercase tracking-widest">
+                                        <span>Status: {stats.progressoTeto > 85 ? 'CRÍTICO' : 'ESTÁVEL'}</span>
+                                        <span>Média Diária: R$ {stats.mediaDiaria}</span>
+                                    </div>
+                                </div>
+
+                                {/* ÁREA DE LANÇAMENTO RÁPIDO */}
+                                <section id="form-area" className="space-y-6 pt-4">
+                                    <div className="flex items-center gap-4 px-2">
+                                        <div className="h-px flex-1 bg-white/5"></div>
+                                        <h4 className="text-[10px] font-black opacity-30 uppercase tracking-[0.4em]">Protocolo de Entrada</h4>
+                                        <div className="h-px flex-1 bg-white/5"></div>
+                                    </div>
+
+                                    {/* SELETOR DE FLUXO E CATEGORIA */}
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <button 
+                                            onClick={() => setTipo('receita')}
+                                            className={`group relative overflow-hidden py-6 rounded-spark font-black text-[10px] uppercase tracking-[0.3em] transition-all duration-500 ${tipo === 'receita' ? 'bg-green-500 text-white shadow-[0_15px_40px_-10px_rgba(34,197,94,0.5)] scale-[1.02]' : 'glass opacity-30 hover:opacity-100'}`}
+                                        >
+                                            <div className="flex flex-col items-center gap-2">
+                                                <Icon name="TrendingUp" className="w-5 h-5" />
+                                                Entrada Ativa
+                                            </div>
+                                        </button>
+                                        <button 
+                                            onClick={() => setTipo('despesa')}
+                                            className={`group relative overflow-hidden py-6 rounded-spark font-black text-[10px] uppercase tracking-[0.3em] transition-all duration-500 ${tipo === 'despesa' ? 'bg-red-500 text-white shadow-[0_15px_40px_-10px_rgba(239,68,68,0.5)] scale-[1.02]' : 'glass opacity-30 hover:opacity-100'}`}
+                                        >
+                                            <div className="flex flex-col items-center gap-2">
+                                                <Icon name="TrendingDown" className="w-5 h-5" />
+                                                Saída Ativa
+                                            </div>
+                                        </button>
+                                    </div>
+
+                                    {/* INPUTS DE ALTA PRECISÃO */}
+                                    <div className="space-y-4">
+                                        <div className="relative group">
+                                            <div className="absolute left-6 top-1/2 -translate-y-1/2 p-2 glass rounded-xl accent-text group-focus-within:accent-bg group-focus-within:text-white transition-all">
+                                                <Icon name="Tag" className="w-4 h-4" />
+                                            </div>
+                                            <input 
+                                                type="text" 
+                                                placeholder="Descrição do Protocolo"
+                                                value={desc}
+                                                onChange={e => setDesc(e.target.value)}
+                                                className="w-full glass rounded-[2rem] py-7 pl-16 pr-8 text-sm font-bold border-white/5 focus:glass-active focus:accent-border transition-all uppercase tracking-widest"
+                                            />
+                                        </div>
+
+                                        <div className="relative group">
+                                            <div className="absolute left-6 top-1/2 -translate-y-1/2 text-[10px] font-black accent-text opacity-50 group-focus-within:opacity-100">
+                                                BRL
+                                            </div>
+                                            <input 
+                                                type="number" 
+                                                placeholder="0.00"
+                                                value={valor}
+                                                onChange={e => setValor(e.target.value)}
+                                                className="w-full glass rounded-[2rem] py-8 pl-16 pr-8 text-4xl font-black font-mono-spark accent-text focus:glass-active border-white/5 transition-all"
+                                            />
+                                            <div className="absolute right-6 top-1/2 -translate-y-1/2">
+                                                <div className="w-2 h-2 rounded-full accent-bg animate-pulse"></div>
+                                            </div>
+                                        </div>
+
+                                        <Button 
+                                            onClick={registrarMovimentacao} 
+                                            className="w-full py-8 text-sm shadow-spark active:scale-95"
+                                            icon="Zap"
+                                        >
+                                            Executar Lançamento Master
+                                        </Button>
+                                    </div>
+                                </section>
+                            </div>
+                        )}
+
+                        {/* ABA DE LOGS: AUDITORIA DE FLUXO */}
+                        {tab === 'history' && (
+                            <div className="space-y-10 animate-master pb-20">
+                                <div className="flex items-end justify-between px-4">
+                                    <div className="space-y-2">
+                                        <h2 className="text-4xl font-black uppercase tracking-tighter-spark leading-none italic">Logs</h2>
+                                        <p className="text-[10px] font-bold opacity-30 uppercase tracking-[0.4em]">Auditoria de Transações em Tempo Real</p>
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <button 
+                                            onClick={exportPDF}
+                                            className="p-5 glass rounded-[1.5rem] accent-text hover:accent-bg hover:text-white transition-all shadow-xl"
+                                        >
+                                            <Icon name="FileDown" className="w-6 h-6" />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* FILTROS DE AUDITORIA */}
+                                <div className="flex gap-4 px-2 overflow-x-auto hide-scroll pb-2">
+                                    {['todos', 'receita', 'despesa'].map(f => (
+                                        <button 
+                                            key={f}
+                                            onClick={() => setActiveFilter(f)}
+                                            className={`px-8 py-3 rounded-full text-[9px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${activeFilter === f ? 'accent-bg text-white shadow-lg' : 'glass opacity-30'}`}
+                                        >
+                                            {f}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* LISTAGEM DE ALTA FIDELIDADE */}
+                                <div className="space-y-5">
+                                    {transacoes.filter(t => activeFilter === 'todos' || t.tipo === activeFilter).length === 0 ? (
+                                        <div className="glass rounded-master py-32 text-center opacity-10 border-dashed border-2 border-white/20">
+                                            <Icon name="DatabaseBackup" className="w-16 h-16 mx-auto mb-6 opacity-20" />
+                                            <p className="text-[10px] font-black uppercase tracking-[0.5em]">Sem Registros no Vault</p>
+                                        </div>
+                                    ) : (
+                                        transacoes
+                                            .filter(t => activeFilter === 'todos' || t.tipo === activeFilter)
+                                            .map((t, idx) => (
+                                                <div 
+                                                    key={t.id}
+                                                    className="group glass rounded-spark p-6 flex items-center justify-between hover:glass-active transition-all duration-500 border-l-[6px]"
+                                                    style={{ borderLeftColor: t.tipo === 'receita' ? '#22c55e' : '#ef4444' }}
+                                                >
+                                                    <div className="flex items-center gap-6">
+                                                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${t.tipo === 'receita' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                                                            <Icon name={t.tipo === 'receita' ? "ArrowUpRight" : "ArrowDownLeft"} className="w-6 h-6" />
+                                                        </div>
+                                                        <div>
+                                                            <div className="flex items-center gap-3 mb-1">
+                                                                <span className="text-[9px] font-black opacity-20 uppercase font-mono-spark">{t.data}</span>
+                                                                <span className="px-2 py-[2px] bg-white/5 rounded text-[7px] font-bold opacity-30 uppercase tracking-widest">{t.categoria || 'GERAL'}</span>
+                                                            </div>
+                                                            <h4 className="text-sm font-black uppercase tracking-tight group-hover:accent-text transition-colors">{t.desc}</h4>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div className="flex items-center gap-8">
+                                                        <div className="text-right">
+                                                            <p className={`text-xl font-black font-mono-spark tracking-tighter ${t.tipo === 'receita' ? 'text-green-500' : 'text-white'}`}>
+                                                                <span className="text-[10px] opacity-20 mr-2 font-medium italic">R$</span>
+                                                                {t.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                            </p>
+                                                        </div>
+                                                        <button 
+                                                            onClick={() => eliminarRegistro(t.id)}
+                                                            className="p-3 rounded-xl opacity-0 group-hover:opacity-100 text-red-500/30 hover:text-red-500 hover:bg-red-500/10 transition-all active:scale-75"
+                                                        >
+                                                            <Icon name="Trash2" className="w-5 h-5" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))
                                     )}
                                 </div>
                             </div>
                         )}
-                        {/* ABA DE CONFIGURAÇÕES MASTER */}
+
+                        {/* ABA MASTER: CENTRAL DE COMANDO E TEMAS */}
                         {tab === 'config' && (
-                            <div className="space-y-8 animate-master pb-20">
-                                <div className="px-2">
-                                    <h2 className="text-3xl font-black uppercase tracking-tighter">Painel Master</h2>
-                                    <p className="text-[10px] font-bold opacity-30 uppercase tracking-[0.2em]">Configurações de Identidade</p>
+                            <div className="space-y-12 animate-master pb-20 px-4">
+                                <div className="space-y-2">
+                                    <h2 className="text-4xl font-black uppercase tracking-tighter-spark italic">Configurações</h2>
+                                    <p className="text-[10px] font-bold opacity-30 uppercase tracking-[0.4em]">Acesso de Nível Administrativo</p>
                                 </div>
 
-                                <div className="glass rounded-[3.5rem] p-10 space-y-8 border-white/5 relative overflow-hidden">
-                                    <div className="absolute -bottom-20 -left-20 w-60 h-60 accent-bg opacity-5 blur-[100px] pointer-events-none"></div>
+                                <div className="glass rounded-master p-10 space-y-10 border-white/5 relative overflow-hidden">
+                                    <div className="absolute -bottom-20 -left-20 w-80 h-80 accent-bg opacity-5 blur-[120px] pointer-events-none"></div>
 
-                                    <div className="space-y-6">
-                                        <div className="space-y-3">
-                                            <label className="text-[10px] font-black opacity-40 uppercase ml-4 tracking-widest">Assinatura do Mestre</label>
-                                            <input 
-                                                value={masterName} 
-                                                onChange={e => setMasterName(e.target.value.toUpperCase())} 
-                                                className="w-full glass rounded-3xl py-5 px-8 text-sm font-bold border-white/10 focus:accent-border transition-all" 
-                                            />
+                                    {/* IDENTIDADE DO MESTRE */}
+                                    <div className="space-y-8">
+                                        <div className="flex items-center gap-4 mb-4">
+                                            <div className="w-1 h-6 accent-bg rounded-full"></div>
+                                            <h5 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Identidade Visual</h5>
                                         </div>
-                                        <div className="space-y-3">
-                                            <label className="text-[10px] font-black opacity-40 uppercase ml-4 tracking-widest">URL da Imagem</label>
-                                            <input 
-                                                value={masterPhoto} 
-                                                onChange={e => setMasterPhoto(e.target.value)} 
-                                                placeholder="https://link-da-foto.jpg"
-                                                className="w-full glass rounded-3xl py-5 px-8 text-xs font-medium border-white/10 focus:accent-border transition-all" 
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 gap-6 pt-4 border-t border-white/5">
-                                        <div className="space-y-3">
-                                            <label className="text-[10px] font-black opacity-40 uppercase ml-4 tracking-widest">Teto de Gastos (R$)</label>
-                                            <input 
-                                                type="number" 
-                                                value={tetoGasto} 
-                                                onChange={e => setTetoGasto(parseFloat(e.target.value) || 0)} 
-                                                className="w-full glass rounded-3xl py-5 px-8 text-sm font-black accent-text border-white/10" 
-                                            />
-                                        </div>
-                                        <div className="space-y-3">
-                                            <label className="text-[10px] font-black opacity-40 uppercase ml-4 tracking-widest">Cor de Acento (Hex)</label>
-                                            <div className="flex gap-4">
+                                        
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            <div className="space-y-3">
+                                                <label className="text-[9px] font-black opacity-30 uppercase ml-4 tracking-widest">Assinatura Master</label>
                                                 <input 
-                                                    value={accent} 
-                                                    onChange={e => setAccent(e.target.value)} 
-                                                    className="flex-1 glass rounded-3xl py-5 px-8 text-xs font-mono border-white/10 uppercase" 
+                                                    value={masterName} 
+                                                    onChange={e => setMasterName(e.target.value.toUpperCase())} 
+                                                    className="w-full glass rounded-[2rem] py-5 px-8 text-sm font-bold border-white/10 focus:accent-border focus:glass-active transition-all" 
                                                 />
-                                                <div className="w-16 h-16 rounded-3xl shadow-lg border-4 border-white/10" style={{ backgroundColor: accent }}></div>
+                                            </div>
+                                            <div className="space-y-3">
+                                                <label className="text-[9px] font-black opacity-30 uppercase ml-4 tracking-widest">URL da Avatar (CDN)</label>
+                                                <input 
+                                                    value={masterPhoto} 
+                                                    onChange={e => setMasterPhoto(e.target.value)} 
+                                                    placeholder="https://imgur.com/image.jpg"
+                                                    className="w-full glass rounded-[2rem] py-5 px-8 text-[10px] font-medium border-white/10 focus:accent-border focus:glass-active transition-all" 
+                                                />
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="pt-8 space-y-4">
+                                    {/* PARÂMETROS DO SISTEMA */}
+                                    <div className="pt-10 border-t border-white/5 space-y-8">
+                                        <div className="flex items-center gap-4 mb-4">
+                                            <div className="w-1 h-6 accent-bg rounded-full"></div>
+                                            <h5 className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Parâmetros Operacionais</h5>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            <div className="space-y-3">
+                                                <label className="text-[9px] font-black opacity-30 uppercase ml-4 tracking-widest">Teto de Gastos Global (R$)</label>
+                                                <input 
+                                                    type="number" 
+                                                    value={tetoGasto} 
+                                                    onChange={e => setTetoGasto(parseFloat(e.target.value) || 0)} 
+                                                    className="w-full glass rounded-[2rem] py-5 px-8 text-lg font-black accent-text border-white/10" 
+                                                />
+                                            </div>
+                                            <div className="space-y-3">
+                                                <label className="text-[9px] font-black opacity-30 uppercase ml-4 tracking-widest">Código Hex de Acento</label>
+                                                <div className="flex gap-4">
+                                                    <input 
+                                                        value={accent} 
+                                                        onChange={e => setAccent(e.target.value)} 
+                                                        className="flex-1 glass rounded-[2rem] py-5 px-8 text-xs font-mono-spark border-white/10 uppercase tracking-widest" 
+                                                    />
+                                                    <div className="w-16 h-16 rounded-2xl shadow-2xl border-4 border-white/10 accent-bg" style={{ backgroundColor: accent }}></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* COMANDOS DE EMERGÊNCIA */}
+                                    <div className="pt-12 space-y-4">
                                         <button 
-                                            onClick={() => { if(confirm("Mestre, deseja realmente bloquear o Vault agora?")) setIsLocked(true); }}
-                                            className="w-full glass bg-white/5 py-5 rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] hover:bg-white/10 transition-all flex items-center justify-center gap-3"
+                                            onClick={() => { if(confirm("Mestre, deseja trancar o acesso ao Vault agora?")) setIsLocked(true); }}
+                                            className="w-full glass py-6 rounded-[2.5rem] text-[10px] font-black uppercase tracking-[0.4em] hover:bg-white/10 transition-all flex items-center justify-center gap-4 group"
                                         >
-                                            <Icon name="Lock" className="w-4 h-4" /> Trancar Vault
+                                            <Icon name="Lock" className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                                            Bloquear Acesso Master
                                         </button>
                                         <button 
-                                            onClick={() => { if(confirm("ALERTA: Isso apagará todos os dados financeiros. Prosseguir, Senhor?")) { localStorage.clear(); location.reload(); } }}
-                                            className="w-full bg-red-500/10 text-red-500 py-5 rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] hover:bg-red-500 hover:text-white transition-all shadow-lg shadow-red-500/10"
+                                            onClick={() => { if(confirm("ALERTA CRÍTICO: Todos os dados financeiros e configurações serão destruídos. Confirmar, Senhor?")) { localStorage.clear(); location.reload(); } }}
+                                            className="w-full bg-red-500/5 text-red-500/50 py-6 rounded-[2.5rem] text-[9px] font-black uppercase tracking-[0.4em] hover:bg-red-500 hover:text-white transition-all shadow-lg hover:shadow-red-500/20"
                                         >
-                                            Hard Reset Sistema
+                                            Protocolo Zero (Hard Reset)
                                         </button>
                                     </div>
                                 </div>
@@ -462,32 +663,46 @@
                         )}
                     </main>
 
-                    {/* BARRA DE NAVEGAÇÃO OMNI */}
-                    <nav className="fixed bottom-10 left-6 right-6 glass rounded-[3.5rem] p-4 flex items-center justify-around shadow-2xl z-50 border-white/10 animate-master">
-                        <button onClick={() => setTab('history')} className={`flex-1 flex flex-col items-center justify-center py-4 rounded-[2.5rem] transition-all ${tab === 'history' ? 'accent-text bg-white/5 scale-110' : 'opacity-20 hover:opacity-50'}`}>
-                            <Icon name="History" className="w-7 h-7" />
-                            <span className={`text-[8px] font-black mt-1 uppercase ${tab === 'history' ? 'block' : 'hidden'}`}>Logs</span>
-                        </button>
-                        <button onClick={() => setTab('home')} className={`flex-[1.6] flex flex-col items-center justify-center py-6 rounded-[3rem] transition-all ${tab === 'home' ? 'accent-bg text-white shadow-spark scale-110 -translate-y-6' : 'opacity-20 hover:opacity-50'}`}>
-                            <Icon name="Home" className="w-9 h-9" />
-                        </button>
-                        <button onClick={() => setTab('config')} className={`flex-1 flex flex-col items-center justify-center py-4 rounded-[2.5rem] transition-all ${tab === 'config' ? 'accent-text bg-white/5 scale-110' : 'opacity-20 hover:opacity-50'}`}>
-                            <Icon name="Settings" className="w-7 h-7" />
-                            <span className={`text-[8px] font-black mt-1 uppercase ${tab === 'config' ? 'block' : 'hidden'}`}>Master</span>
-                        </button>
+                    {/* NAVEGAÇÃO OMNI: DOCK FLUTUANTE */}
+                    <nav className="fixed bottom-10 left-6 right-6 md:left-1/2 md:right-auto md:-translate-x-1/2 md:w-[450px] z-[500] animate-master">
+                        <div className="glass rounded-[3.5rem] p-4 flex items-center justify-around shadow-[0_30px_100px_-20px_rgba(0,0,0,0.8)] border-white/10 relative">
+                            {/* INDICADOR DE ABA ATIVA (DYNAMIC GLOW) */}
+                            <div className="absolute inset-0 accent-bg opacity-[0.03] blur-3xl pointer-events-none"></div>
+                            
+                            <button 
+                                onClick={() => setTab('history')} 
+                                className={`flex-1 flex flex-col items-center justify-center py-5 rounded-[2.5rem] transition-all duration-500 ${tab === 'history' ? 'accent-text bg-white/[0.03] scale-110' : 'opacity-20 hover:opacity-50'}`}
+                            >
+                                <Icon name="BarChart3" className="w-6 h-6" />
+                                <span className={`text-[7px] font-black mt-2 uppercase tracking-widest ${tab === 'history' ? 'opacity-100' : 'opacity-0'}`}>Auditoria</span>
+                            </button>
+
+                            <button 
+                                onClick={() => setTab('home')} 
+                                className={`flex-[1.8] flex flex-col items-center justify-center py-7 rounded-[3rem] transition-all duration-700 ${tab === 'home' ? 'accent-bg text-white shadow-spark scale-110 -translate-y-8' : 'opacity-20 hover:opacity-50'}`}
+                            >
+                                <Icon name="LayoutDashboard" className="w-8 h-8" strokeWidth={3} />
+                            </button>
+
+                            <button 
+                                onClick={() => setTab('config')} 
+                                className={`flex-1 flex flex-col items-center justify-center py-5 rounded-[2.5rem] transition-all duration-500 ${tab === 'config' ? 'accent-text bg-white/[0.03] scale-110' : 'opacity-20 hover:opacity-50'}`}
+                            >
+                                <Icon name="Settings2" className="w-6 h-6" />
+                                <span className={`text-[7px] font-black mt-2 uppercase tracking-widest ${tab === 'config' ? 'opacity-100' : 'opacity-0'}`}>Sistemas</span>
+                            </button>
+                        </div>
                     </nav>
                 </div>
             );
         }
 
-        // --- INICIALIZAÇÃO DO NÚCLEO ---
-        try {
-            const root = ReactDOM.createRoot(document.getElementById('root'));
-            root.render(<React.StrictMode><App /></React.StrictMode>);
-            console.log("SPARK OMNI VAULT v3.5: Operacional, Mestre.");
-        } catch (err) {
-            document.body.innerHTML = `<div style="color:red; padding:20px;">Erro de Inicialização: ${err.message}</div>`;
-        }
+        // --- INICIALIZAÇÃO DO NÚCLEO REACT ---
+        const container = document.getElementById('root');
+        const root = ReactDOM.createRoot(container);
+        root.render(<App />);
+        
+        console.log("SPARK OMNI VAULT v3.5: Todos os sistemas estão nominais. Pronto para o comando, Senhor.");
     </script>
 </body>
 </html>
