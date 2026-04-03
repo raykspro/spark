@@ -3,597 +3,322 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SPARK OMNI-CORPUS v9.0 | ARCHITECT'S LEGACY</title>
+    <title>SPARK CORE v9.3 | REFINED EDITION</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/date-fns/2.30.0/index.min.js"></script>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&family=Orbitron:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@100;200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Orbitron:wght@700;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     
     <style>
-        /* FRAMEWORK DE ESTILIZAÇÃO MASTER V9.0 */
         :root { 
-            --primary: #0066FF; 
-            --primary-glow: rgba(0, 102, 255, 0.4);
-            --bg-ultra-deep: #010204; 
-            --bg-panel: rgba(10, 12, 16, 0.8);
-            --text-silver: #cbd5e1;
-            --font-main: 'Inter', sans-serif;
-            --font-display: 'Orbitron', sans-serif;
-            --font-code: 'JetBrains Mono', monospace;
-            --border-thin: rgba(255, 255, 255, 0.08);
-            --curve-master: 3.5rem;
-            --animation-slow: 0.8s cubic-bezier(0.2, 1, 0.2, 1);
+            --accent: #0066FF; 
+            --bg-base: #010204; 
+            --glass: rgba(15, 20, 30, 0.7);
+            --border: rgba(255, 255, 255, 0.06);
+            --card-radius: 2rem;
         }
 
-        /* VARIAÇÕES CRONOMÁTICAS DO SISTEMA */
-        .theme-default { --primary: #0066FF; --primary-glow: rgba(0, 102, 255, 0.3); }
-        .theme-emerald { --primary: #10b981; --primary-glow: rgba(16, 185, 129, 0.3); }
-        .theme-ruby { --primary: #e11d48; --primary-glow: rgba(225, 29, 72, 0.3); }
-        .theme-amber { --primary: #f59e0b; --primary-glow: rgba(245, 158, 11, 0.3); }
-        .theme-violet { --primary: #8b5cf6; --primary-glow: rgba(139, 92, 246, 0.3); }
-        .theme-monochrome { --primary: #ffffff; --primary-glow: rgba(255, 255, 255, 0.2); }
+        .theme-emerald { --accent: #10b981; }
+        .theme-ruby { --accent: #e11d48; }
+        .theme-amber { --accent: #f59e0b; }
 
-        /* RESET E ESTRUTURA FUNDAMENTAL */
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
-        html, body { background-color: var(--bg-ultra-deep); color: var(--text-silver); font-family: var(--font-main); min-height: 100vh; overflow-x: hidden; scroll-behavior: smooth; }
-
-        /* COMPONENTES DE SUPERFÍCIE (GLASSMORPHISM ADVANCED) */
-        .panel-glass { backdrop-filter: blur(40px) saturate(180%); background: var(--bg-panel); border: 1px solid var(--border-thin); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
-        .panel-glass:hover { border-color: rgba(255, 255, 255, 0.15); }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg-base); color: #cbd5e1; font-family: 'Inter', sans-serif; overflow-x: hidden; }
         
-        .accent-bg { background-color: var(--primary) !important; }
-        .accent-text { color: var(--primary) !important; }
-        .accent-border { border-color: var(--primary) !important; }
-        .glow-effect { box-shadow: 0 0 30px var(--primary-glow); }
+        .font-display { font-family: 'Orbitron', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
 
-        /* ANIMAÇÕES CINEMATOGRÁFICAS DE INTERFACE */
-        @keyframes systemBoot {
-            0% { opacity: 0; transform: translateY(40px) scale(0.95); filter: blur(15px); }
-            100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
-        }
-        .boot-sequence { animation: systemBoot var(--animation-slow) forwards; }
+        .panel-glass { backdrop-filter: blur(20px); background: var(--glass); border: 1px solid var(--border); }
+        .accent-text { color: var(--accent); }
+        .accent-bg { background-color: var(--accent); }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-in { animation: fadeIn 0.5s ease-out forwards; }
+        
+        .nav-item-active { color: var(--accent); transform: translateY(-4px); }
+        .nav-item-active::after { content: ''; position: absolute; bottom: -8px; width: 4px; height: 4px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 8px var(--accent); }
 
-        @keyframes pulseBorder {
-            0% { border-color: var(--border-thin); }
-            50% { border-color: var(--primary); }
-            100% { border-color: var(--border-thin); }
-        }
-        .border-pulse { animation: pulseBorder 3s infinite; }
-
-        /* INTERFACE DE ENTRADA MASTER */
-        .master-field { background: rgba(0,0,0,0.3); border: 1px solid var(--border-thin); border-radius: 1.5rem; padding: 1.25rem; color: white; width: 100%; transition: all 0.4s; }
-        .master-field:focus { border-color: var(--primary); background: rgba(255,255,255,0.05); box-shadow: 0 0 20px var(--primary-glow); }
-
-        .btn-action { border-radius: var(--curve-master); font-weight: 800; text-transform: uppercase; letter-spacing: 0.15em; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.75rem; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .btn-action:active { transform: scale(0.94); filter: brightness(1.2); }
-
-        /* SCROLLBAR OCULTA MAS FUNCIONAL */
         ::-webkit-scrollbar { width: 0px; }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        
+        .spark-shadow { box-shadow: 0 20px 40px -15px rgba(0,0,0,0.5); }
+        .btn-press:active { transform: scale(0.96); }
     </style>
 </head>
 <body>
-    <div id="spark-root"></div>
+    <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo, useCallback, useRef } = React;
+        const { useState, useEffect, useMemo, useCallback } = React;
 
-        // --- SISTEMA DE ICONOGRAFIA VETORIAL OMNI ---
-        const OmniIcon = React.memo(({ name, size = 24, className = "" }) => {
-            const library = {
+        // Ícones Redimensionados para Elegância (Size 20-24px padrão)
+        const Icon = ({ name, className = "w-5 h-5", size = "24" }) => {
+            const icons = {
                 Home: "M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z",
                 History: "M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z",
-                Settings: "M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z",
+                Settings: "M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58z",
                 Plus: "M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z",
-                Minus: "M19 13H5v-2h14v2z",
-                Card: "M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4V6h16v12z",
-                Export: "M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z",
-                Check: "M9 16.17L4.83 12l-1.42 1.42L9 19 21 7l-1.42-1.42z",
-                TrendUp: "M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z",
-                Trash: "M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z",
-                Alimentação: "M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7z",
-                Lazer: "M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z",
-                Saúde: "M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z",
-                Transporte: "M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99z",
-                Outros: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"
+                Food: "M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7z",
+                Transport: "M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99z",
+                Fun: "M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z",
+                Audit: "M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z",
+                Trash: "M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"
             };
             return (
                 <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
-                    <path d={library[name] || ""} />
+                    <path d={icons[name] || ""} />
                 </svg>
-            );
-        });
-
-        // --- COMPONENTE DE BARRA DE SAÚDE FINANCEIRA ---
-        const HealthBar = ({ label, value, max, colorClass }) => {
-            const percentage = Math.min((value / max) * 100, 100);
-            const isDanger = percentage > 90;
-            
-            return (
-                <div className="w-full mb-8">
-                    <div className="flex justify-between items-end mb-3 px-2">
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">{label}</span>
-                        <div className="text-right">
-                            <span className={`text-[12px] font-mono font-bold ${isDanger ? 'text-rose-500' : 'opacity-80'}`}>
-                                {percentage.toFixed(1)}%
-                            </span>
-                        </div>
-                    </div>
-                    <div className="h-3 bg-white/5 rounded-full relative overflow-hidden border border-white/5">
-                        <div 
-                            className={`h-full rounded-full ${isDanger ? 'bg-rose-600' : colorClass} transition-all duration-[1500ms] ease-out relative`}
-                            style={{ width: `${percentage}%` }}
-                        >
-                            <div className="absolute inset-0 bg-white/10 animate-pulse"></div>
-                        </div>
-                    </div>
-                </div>
             );
         };
 
-        // --- NÚCLEO ARQUITETURAL SPARK v9.0 ---
         function App() {
-            // -- PERSISTÊNCIA E INFRAESTRUTURA --
-            const [isBooted, setIsBooted] = useState(false);
-            const [masterProfile, setMasterProfile] = useState(() => localStorage.getItem('spark_v9_img') || '');
-            const [activeTheme, setActiveTheme] = useState(() => localStorage.getItem('spark_v9_theme') || 'theme-default');
-            const [view, setView] = useState('home');
+            const [tab, setTab] = useState('home');
+            const [history, setHistory] = useState(() => JSON.parse(localStorage.getItem('spk_v93_db')) || []);
+            const [quotas, setQuotas] = useState(() => JSON.parse(localStorage.getItem('spk_v93_qt')) || { Alimentação: 2500, Transporte: 800, Lazer: 1200 });
+            const [profile, setProfile] = useState(() => localStorage.getItem('spk_v93_img') || '');
+            const [theme, setTheme] = useState(() => localStorage.getItem('spk_v93_th') || 'theme-default');
             
-            // -- DATABASE ENGINE (LOCAL VAULT) --
-            const [history, setHistory] = useState(() => JSON.parse(localStorage.getItem('spark_v9_db')) || []);
-            const [quotas, setQuotas] = useState(() => JSON.parse(localStorage.getItem('spark_v9_quotas')) || {
-                Alimentação: 3500, Lazer: 2000, Saúde: 1500, Transporte: 1000, Outros: 800
-            });
-            const [masterCredit, setMasterCredit] = useState(() => parseFloat(localStorage.getItem('spark_v9_credit')) || 30000);
-            
-            // -- INPUT BUFFER --
-            const [valInput, setValInput] = useState('');
-            const [descInput, setDescInput] = useState('');
-            const [catInput, setCatInput] = useState('Alimentação');
-            const [alert, setAlert] = useState(null);
+            const [val, setVal] = useState('');
+            const [desc, setDesc] = useState('');
+            const [cat, setCat] = useState('Alimentação');
 
-            // -- MOTOR DE SINCRONIZAÇÃO DE MEMÓRIA --
             useEffect(() => {
-                const vault = {
-                    spark_v9_db: JSON.stringify(history),
-                    spark_v9_quotas: JSON.stringify(quotas),
-                    spark_v9_img: masterProfile,
-                    spark_v9_theme: activeTheme,
-                    spark_v9_credit: masterCredit.toString()
-                };
-                Object.entries(vault).forEach(([k, v]) => localStorage.setItem(k, v));
-                document.body.className = activeTheme;
-            }, [history, quotas, masterProfile, activeTheme, masterCredit]);
+                localStorage.setItem('spk_v93_db', JSON.stringify(history));
+                localStorage.setItem('spk_v93_qt', JSON.stringify(quotas));
+                localStorage.setItem('spk_v93_img', profile);
+                localStorage.setItem('spk_v93_th', theme);
+                document.body.className = theme;
+            }, [history, quotas, profile, theme]);
 
-            // -- FEEDBACK SYSTEM --
-            const triggerAlert = useCallback((text, type = 'info') => {
-                setAlert({ text, type });
-                setTimeout(() => setAlert(null), 3000);
-            }, []);
-
-            // -- ANALYTICS ENGINE --
             const stats = useMemo(() => {
-                const totalIn = history.filter(h => h.type === 'in').reduce((acc, curr) => acc + curr.val, 0);
-                const totalOutDeb = history.filter(h => h.type === 'out' && h.mode === 'deb').reduce((acc, curr) => acc + curr.val, 0);
-                const totalOutCred = history.filter(h => h.mode === 'cred').reduce((acc, curr) => acc + curr.val, 0);
-                
-                const byCat = history.filter(h => h.type === 'out').reduce((acc, h) => {
-                    acc[h.cat] = (acc[h.cat] || 0) + h.val;
+                const total = history.reduce((acc, t) => t.type === 'in' ? acc + t.val : acc - t.val, 0);
+                const byCat = history.filter(t => t.type === 'out').reduce((acc, t) => {
+                    acc[t.cat] = (acc[t.cat] || 0) + t.val;
                     return acc;
                 }, {});
+                return { total, byCat };
+            }, [history]);
 
-                const now = new Date();
-                const weekStart = new Date(now.setDate(now.getDate() - now.getDay())).getTime();
-                const weeklyFlow = history
-                    .filter(h => h.type === 'out' && h.ts >= weekStart)
-                    .reduce((acc, curr) => acc + curr.val, 0);
-
-                return {
-                    netBalance: totalIn - totalOutDeb,
-                    weeklyFlow,
-                    creditUsage: totalOutCred,
-                    creditAvailable: masterCredit - totalOutCred,
-                    byCat
-                };
-            }, [history, masterCredit]);
-
-            // -- TRANSACTION CONTROLLER --
-            const processTransaction = (type, mode = 'deb') => {
-                const amount = parseFloat(valInput);
-                if (isNaN(amount) || amount <= 0) return triggerAlert("VOLUME INVÁLIDO, SENHOR", "error");
-
-                const entry = {
-                    uuid: `SPK-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
-                    ts: Date.now(),
+            const addEntry = (type) => {
+                const amount = parseFloat(val);
+                if (!amount) return;
+                const newEntry = {
+                    id: Date.now(),
                     val: amount,
-                    type, mode,
-                    cat: catInput,
-                    label: descInput.trim().toUpperCase() || (type === 'in' ? 'APORTE SISTÊMICO' : 'REDUÇÃO PATRIMONIAL'),
-                    meta: {
-                        date: new Date().toLocaleDateString('pt-BR'),
-                        time: new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}),
-                        day: new Date().toLocaleDateString('pt-BR', {weekday: 'long'}).toUpperCase()
-                    }
+                    desc: desc.trim().toUpperCase() || (type === 'in' ? 'APORTE SISTÊMICO' : 'REDUÇÃO PATRIMONIAL'),
+                    cat, type,
+                    date: new Date().toLocaleDateString('pt-BR'),
+                    time: new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})
                 };
-
-                setHistory(prev => [entry, ...prev]);
-                setValInput(''); setDescInput('');
-                triggerAlert("REGISTRO CONSOLIDADO NO VAULT");
+                setHistory([newEntry, ...history]);
+                setVal(''); setDesc('');
             };
 
-            // -- EXPORTAÇÃO DE AUDITORIA PDF --
-            const generateAudit = () => {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
-                
-                // Cabeçalho Industrial
-                doc.setFillColor(1, 2, 4);
-                doc.rect(0, 0, 210, 297, 'F');
-                
-                doc.setTextColor(0, 102, 255);
-                doc.setFontSize(32);
-                doc.text("SPARK OMNI AUDIT", 20, 35);
-                
-                doc.setDrawColor(0, 102, 255);
-                doc.line(20, 42, 190, 42);
-                
-                doc.setTextColor(255, 255, 255);
-                doc.setFontSize(14);
-                doc.text(`BALANÇO TOTAL: R$ ${stats.netBalance.toFixed(2)}`, 20, 60);
-                doc.text(`CRÉDITO OPERACIONAL: R$ ${stats.creditUsage.toFixed(2)}`, 20, 70);
-                
-                doc.setFontSize(9);
-                let yPos = 100;
-                doc.text("SEQUÊNCIA DE LOGS DO COFRE:", 20, 92);
-                
-                history.slice(0, 35).forEach((t, i) => {
-                    if (yPos > 275) { doc.addPage(); yPos = 30; }
-                    doc.text(`${t.meta.date} | ${t.uuid} | ${t.label.padEnd(20, '.')} | R$ ${t.val.toFixed(2)}`, 20, yPos);
-                    yPos += 7;
+            const deleteEntry = (id) => {
+                if(confirm("REMOVER REGISTRO, SENHOR?")) {
+                    setHistory(history.filter(t => t.id !== id));
+                }
+            };
+
+            const exportPDF = () => {
+                const doc = new jspdf.jsPDF();
+                doc.setFontSize(20); doc.text("SPARK AUDIT REPORT", 20, 20);
+                doc.setFontSize(12); doc.text(`SALDO CONSOLIDADO: R$ ${stats.total.toFixed(2)}`, 20, 30);
+                let y = 45;
+                history.slice(0, 30).forEach(t => {
+                    doc.text(`${t.date} | ${t.desc.substring(0,20)} | R$ ${t.val.toFixed(2)}`, 20, y);
+                    y += 8;
                 });
-                
-                doc.save(`SPARK_V9_AUDIT_${Date.now()}.pdf`);
-                triggerAlert("RELATÓRIO GERADO COM SUCESSO");
+                doc.save(`audit_${Date.now()}.pdf`);
             };
-
-            // -- TELA DE AUTENTICAÇÃO INICIAL --
-            if (!isBooted) return (
-                <div className="h-screen w-full flex flex-col items-center justify-center p-12 bg-[#010204] animate-master relative overflow-hidden">
-                    <div className="absolute inset-0 opacity-5 pointer-events-none">
-                        <div className="grid grid-cols-12 gap-4 h-full w-full">
-                            {Array(144).fill(0).map((_,i) => <div key={i} className="border border-blue-500/10 h-24"></div>)}
-                        </div>
-                    </div>
-                    
-                    <div className="relative group mb-16">
-                        <div 
-                            className="w-80 h-80 rounded-full border-4 accent-border shadow-[0_0_80px_var(--primary-glow)] overflow-hidden cursor-pointer active:scale-90 transition-all duration-1000"
-                            onClick={() => setIsBooted(true)}
-                        >
-                            <img src={masterProfile || 'https://via.placeholder.com/800'} className="w-full h-full object-cover grayscale brightness-50 group-hover:grayscale-0 group-hover:brightness-100 transition-all duration-[2s]" />
-                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 group-hover:opacity-0 transition-opacity">
-                                <OmniIcon name="Settings" size="72" className="accent-text animate-spin-slow mb-6" />
-                                <span className="text-[12px] font-black tracking-[1em] text-white/40 uppercase">Awaiting Master</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <h1 className="text-[12rem] font-black italic accent-text tracking-tighter leading-none mb-4 select-none">SPARK</h1>
-                    <p className="text-[14px] font-black opacity-20 tracking-[1.8em] uppercase mb-24">Omni-Corpus v9.0 | Legacy</p>
-                    
-                    <button 
-                        onClick={() => setIsBooted(true)}
-                        className="px-64 py-14 accent-bg btn-action text-white text-[18px] shadow-2xl hover:scale-105 active:scale-95"
-                    >
-                        INICIALIZAR SEQUÊNCIA
-                    </button>
-                </div>
-            );
 
             return (
-                <div className="max-w-5xl mx-auto p-12 pb-80 boot-sequence">
-                    {/* OVERLAY DE NOTIFICAÇÃO MASTER */}
-                    {alert && (
-                        <div className="fixed top-12 left-1/2 -translate-x-1/2 z-[10000] panel-glass px-16 py-8 rounded-full border-l-[12px] accent-border shadow-2xl flex items-center gap-8 animate-master">
-                            <div className="w-4 h-4 rounded-full accent-bg animate-ping"></div>
-                            <span className="text-[12px] font-black uppercase tracking-[0.4em] text-white">{alert.text}</span>
-                        </div>
-                    )}
-
-                    {/* CABEÇALHO DE ALTA FIDELIDADE */}
-                    <header className="flex justify-between items-start mb-32 mt-12">
-                        <div className="space-y-12">
-                            <div className="flex items-center gap-6">
-                                <div className="w-6 h-6 rounded-full accent-bg animate-pulse"></div>
-                                <span className="text-[16px] font-black opacity-40 uppercase tracking-[1em]">Núcleo Ativo</span>
-                            </div>
-                            <div className="space-y-8">
-                                <p className="text-[18px] font-black opacity-20 uppercase tracking-[0.8em]">Capital Consolidado</p>
-                                <h2 className="text-[12rem] font-black italic tracking-tighter flex items-baseline leading-none accent-text select-none">
-                                    <span className="text-5xl not-italic opacity-10 mr-12 font-mono">R$</span>
-                                    {stats.netBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                </h2>
-                            </div>
+                <div className="min-h-screen p-5 pb-36 max-w-md mx-auto">
+                    {/* TOP BAR REFINADA */}
+                    <header className="flex justify-between items-end mb-10 pt-4 animate-in">
+                        <div>
+                            <h1 className="font-display text-2xl font-black accent-text tracking-tighter">SPARK</h1>
+                            <p className="text-[9px] font-bold opacity-30 tracking-[0.4em] uppercase">Control Unit v9.3</p>
                         </div>
                         <div className="relative group">
-                            <div className="w-48 h-48 rounded-full border-4 accent-border glow-effect overflow-hidden panel-glass p-1.5 group-hover:rotate-6 transition-all duration-[1s]">
-                                <img src={masterProfile || 'https://via.placeholder.com/400'} className="w-full h-full object-cover rounded-full" />
+                            <div className="w-12 h-12 rounded-full border border-white/10 p-0.5 overflow-hidden spark-shadow">
+                                <img src={profile || 'https://via.placeholder.com/150'} className="w-full h-full object-cover rounded-full grayscale hover:grayscale-0 transition-all duration-500" />
                             </div>
-                            <label className="absolute -bottom-5 -right-5 w-18 h-18 accent-bg rounded-full flex items-center justify-center cursor-pointer border-4 border-[#010204] hover:scale-125 shadow-2xl transition-all">
-                                <input type="file" className="hidden" onChange={(e) => {
+                            <label className="absolute -bottom-1 -right-1 w-5 h-5 accent-bg rounded-full flex items-center justify-center cursor-pointer border-2 border-black">
+                                <input type="file" className="hidden" onChange={e => {
                                     const reader = new FileReader();
-                                    reader.onload = () => setMasterProfile(reader.result);
+                                    reader.onload = () => setProfile(reader.result);
                                     reader.readAsDataURL(e.target.files[0]);
                                 }} />
-                                <OmniIcon name="Plus" size="36" className="text-white" />
+                                <Icon name="Plus" className="w-3 h-3 text-white" />
                             </label>
                         </div>
                     </header>
 
-                    {/* DASHBOARD DE MÉTRICAS ESTRATÉGICAS */}
-                    <div className="grid grid-cols-2 gap-16 mb-32">
-                        <div className="panel-glass p-16 rounded-[4rem] border-l-[25px] border-blue-600 relative overflow-hidden group hover:-translate-y-4">
-                            <div className="absolute -top-16 -right-16 opacity-5 text-blue-500 group-hover:opacity-10 transition-opacity"><OmniIcon name="TrendUp" size="280" /></div>
-                            <p className="text-[14px] font-black opacity-40 uppercase mb-8 tracking-[0.5em]">Fluxo Operacional</p>
-                            <p className="text-8xl font-black accent-text italic leading-none tracking-tighter">R$ {stats.weeklyFlow.toLocaleString('pt-BR')}</p>
-                            <div className="mt-14 h-3 w-40 accent-bg rounded-full glow-effect"></div>
-                        </div>
-                        <div className="panel-glass p-16 rounded-[4rem] border-l-[25px] border-orange-500 relative overflow-hidden group hover:-translate-y-4">
-                            <div className="absolute -top-16 -right-16 opacity-5 text-orange-500 group-hover:opacity-10 transition-opacity"><OmniIcon name="Card" size="280" /></div>
-                            <p className="text-[14px] font-black opacity-40 uppercase mb-8 tracking-[0.5em] text-orange-500">Crédito Disponível</p>
-                            <p className="text-8xl font-black italic leading-none tracking-tighter">R$ {stats.creditAvailable.toLocaleString('pt-BR')}</p>
-                            <div className="mt-14 flex items-center gap-8">
-                                <div className="h-4 flex-1 bg-white/5 rounded-full overflow-hidden p-1 border border-white/5">
-                                    <div className="h-full bg-orange-500 rounded-full" style={{ width: `${(stats.creditUsage/masterCredit)*100}%` }}></div>
-                                </div>
-                                <span className="text-[14px] font-mono font-bold opacity-30">{((stats.creditUsage/masterCredit)*100).toFixed(1)}%</span>
+                    {tab === 'home' && (
+                        <div className="space-y-6 animate-in">
+                            {/* DISPLAY DE SALDO CENTRALIZADO */}
+                            <div className="panel-glass p-8 rounded-[2rem] text-center border-t-white/10 spark-shadow group">
+                                <p className="text-[10px] font-black opacity-20 uppercase tracking-[0.5em] mb-3">Patrimônio Líquido</p>
+                                <h2 className="text-5xl font-display font-black tracking-tighter leading-none flex items-center justify-center">
+                                    <span className="text-sm opacity-20 mr-3 font-mono">R$</span>
+                                    {stats.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </h2>
+                                <div className="mt-6 h-0.5 w-12 accent-bg mx-auto opacity-30 rounded-full group-hover:w-24 transition-all"></div>
                             </div>
-                        </div>
-                    </div>
 
-                    {view === 'home' && (
-                        <div className="space-y-36">
-                            {/* TERMINAL DE INJEÇÃO E GESTÃO */}
-                            <section className="panel-glass p-32 rounded-[6rem] space-y-24 border-t-2 border-white/10 relative shadow-[0_100px_200px_-50px_rgba(0,0,0,0.8)]">
-                                <div className="absolute -top-14 left-1/2 -translate-x-1/2 panel-glass px-28 py-8 rounded-full border border-white/10 shadow-2xl">
-                                    <span className="text-[14px] font-black tracking-[1.5em] opacity-60 uppercase">System Command</span>
-                                </div>
-
-                                <div className="text-center space-y-20">
-                                    <div className="relative">
-                                        <input 
-                                            type="number" value={valInput} onChange={e=>setValInput(e.target.value)}
-                                            placeholder="0.00" className="bg-transparent w-full text-[16rem] font-black text-center accent-text placeholder:opacity-5 outline-none tracking-tighter transition-all focus:scale-105 leading-none font-display"
-                                        />
-                                    </div>
+                            {/* PAINEL DE COMANDO (ENTRADA) */}
+                            <div className="panel-glass p-6 rounded-[2.5rem] space-y-5">
+                                <div className="text-center">
                                     <input 
-                                        type="text" value={descInput} onChange={e=>setDescInput(e.target.value)}
-                                        placeholder="QUAL A NATUREZA DESTA OPERAÇÃO, SENHOR?..." className="bg-transparent w-full text-[18px] font-bold opacity-30 text-center uppercase tracking-[1em] outline-none border-b border-transparent focus:border-white/10 py-10 focus:opacity-100 transition-all"
+                                        type="number" value={val} onChange={e => setVal(e.target.value)}
+                                        placeholder="0,00" className="bg-transparent w-full text-6xl font-display font-black text-center outline-none accent-text placeholder:opacity-5"
+                                    />
+                                    <input 
+                                        type="text" value={desc} onChange={e => setDesc(e.target.value)}
+                                        placeholder="DESCREVA A OPERAÇÃO..." className="bg-transparent w-full text-center text-[10px] font-bold opacity-30 uppercase tracking-[0.2em] mt-3 outline-none focus:opacity-100 transition-opacity"
                                     />
                                 </div>
 
-                                <div className="grid grid-cols-5 gap-10">
-                                    {Object.keys(quotas).map(c => (
+                                <div className="flex justify-around gap-2 px-2">
+                                    {[
+                                        {n:'Alimentação', i:'Food'}, 
+                                        {n:'Transporte', i:'Transport'}, 
+                                        {n:'Lazer', i:'Fun'}
+                                    ].map(item => (
                                         <button 
-                                            key={c} onClick={()=>setCatInput(c)} 
-                                            className={`py-16 rounded-[3rem] flex flex-col items-center gap-8 transition-all duration-700 ${catInput === c ? 'accent-bg text-white glow-effect scale-110' : 'panel-glass opacity-30 hover:opacity-100 hover:scale-105'}`}
+                                            key={item.n} onClick={() => setCat(item.n)} 
+                                            className={`flex flex-col items-center gap-2 p-3 rounded-2xl transition-all ${cat === item.n ? 'bg-white/10 accent-text scale-105' : 'opacity-20 hover:opacity-50'}`}
                                         >
-                                            <OmniIcon name={c} size="44" />
-                                            <span className="text-[11px] font-black uppercase tracking-widest">{c}</span>
+                                            <Icon name={item.i} className="w-5 h-5" />
+                                            <span className="text-[8px] font-black uppercase tracking-tighter">{item.n}</span>
                                         </button>
                                     ))}
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-12">
-                                    <button onClick={()=>processTransaction('out', 'deb')} className="py-24 btn-action bg-rose-600 text-white text-[20px] shadow-2xl">Liquidatário Débito</button>
-                                    <button onClick={()=>processTransaction('out', 'cred')} className="py-24 btn-action bg-orange-600 text-white text-[20px] shadow-2xl">Liquidatário Crédito</button>
+                                <div className="grid grid-cols-2 gap-3 pt-2">
+                                    <button onClick={() => addEntry('out')} className="btn-press py-4 rounded-2xl bg-white/5 font-black text-[10px] uppercase tracking-widest border border-white/5 hover:bg-white/10">Registrar Saída</button>
+                                    <button onClick={() => addEntry('in')} className="btn-press py-4 rounded-2xl accent-bg text-white font-black text-[10px] uppercase tracking-widest shadow-lg">Injetar Capital</button>
                                 </div>
-                                <button onClick={()=>processTransaction('in')} className="w-full py-20 btn-action border-4 border-emerald-500 text-emerald-500 text-[20px] hover:bg-emerald-500/10 font-black">Injeção de Capital Externo</button>
-                            </section>
+                            </div>
 
-                            {/* AUDITORIA DE TETOS E CONSUMO */}
-                            <section className="space-y-24">
-                                <div className="flex items-center justify-between px-16">
-                                    <h3 className="text-[22px] font-black opacity-30 uppercase tracking-[1.5em]">Treshold Auditing</h3>
-                                    <button onClick={generateAudit} className="flex items-center gap-8 panel-glass px-14 py-6 rounded-full text-[13px] font-black uppercase tracking-widest hover:accent-bg transition-all shadow-xl">
-                                        <OmniIcon name="Export" size="28" /> Auditoria Master
+                            {/* MONITOR DE TETOS - COMPACTO */}
+                            <div className="space-y-3">
+                                <div className="flex justify-between items-center px-2">
+                                    <h3 className="text-[9px] font-black opacity-30 uppercase tracking-[0.4em]">Audit Vault</h3>
+                                    <button onClick={exportPDF} className="text-[9px] font-black accent-text uppercase flex items-center gap-1.5 opacity-60 hover:opacity-100">
+                                        <Icon name="Audit" className="w-3 h-3" /> Relatório
                                     </button>
                                 </div>
-                                
-                                <div className="grid grid-cols-1 gap-16">
-                                    {Object.keys(quotas).map(c => {
-                                        const currentSpend = stats.byCat[c] || 0;
-                                        const isOverLimit = currentSpend > quotas[c];
-                                        
-                                        return (
-                                            <div key={c} className={`panel-glass p-20 rounded-[5rem] space-y-16 border-l-[35px] ${isOverLimit ? 'border-rose-600 animate-pulse shadow-[0_0_120px_rgba(225,29,72,0.2)]' : 'border-transparent hover:border-white/10'}`}>
-                                                <div className="flex justify-between items-center">
-                                                    <div className="flex items-center gap-14">
-                                                        <div className={`p-12 rounded-[3.5rem] shadow-2xl ${isOverLimit ? 'bg-rose-600 text-white' : 'bg-white/5 text-white opacity-40'}`}>
-                                                            <OmniIcon name={c} size="72" />
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-4xl font-black uppercase tracking-[0.6em]">{c}</p>
-                                                            <p className="text-[16px] opacity-20 font-bold uppercase tracking-[0.5em]">Teto Definido: R$ {quotas[c]}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <p className={`text-8xl font-black italic leading-none mb-4 ${isOverLimit ? 'text-rose-500' : 'accent-text'}`}>
-                                                            R$ {currentSpend.toFixed(2)}
-                                                        </p>
-                                                        <p className="text-[14px] font-mono opacity-20 uppercase">Saldo Residual: R$ {(quotas[c]-currentSpend).toFixed(2)}</p>
-                                                    </div>
-                                                </div>
-                                                <HealthBar label="Fator de Exaustão" value={currentSpend} max={quotas[c]} colorClass="accent-bg" />
+                                {Object.keys(quotas).map(c => {
+                                    const spend = stats.byCat[c] || 0;
+                                    const perc = Math.min((spend / quotas[c]) * 100, 100);
+                                    return (
+                                        <div key={c} className="panel-glass p-4 px-5 rounded-[1.5rem] border-l-2 border-l-white/5">
+                                            <div className="flex justify-between items-center mb-2 px-1">
+                                                <span className="text-[10px] font-bold uppercase opacity-50">{c}</span>
+                                                <span className="text-[9px] font-mono opacity-30">R$ {spend.toFixed(0)} / {quotas[c]}</span>
                                             </div>
-                                        )
-                                    })}
-                                </div>
-                            </section>
-                        </div>
-                    )}
-
-                    {view === 'history' && (
-                        <div className="space-y-20 boot-sequence">
-                            <div className="flex justify-between items-end px-16 border-b-4 border-white/5 pb-24">
-                                <div className="space-y-8">
-                                    <h3 className="text-6xl font-black accent-text italic tracking-[0.5em] uppercase">Audit Ledger</h3>
-                                    <p className="text-[14px] font-black opacity-30 tracking-[1.2em] uppercase">High-Integrity Database Sequence</p>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-8xl font-black italic opacity-60 leading-none">{history.length}</p>
-                                    <p className="text-[14px] font-black opacity-10 uppercase tracking-widest mt-4">Total Logs</p>
-                                </div>
-                            </div>
-                            
-                            <div className="space-y-12 px-6">
-                                {history.length === 0 ? (
-                                    <div className="panel-glass p-72 rounded-[10rem] text-center opacity-10 border-dashed border-8 border-white/5">
-                                        <OmniIcon name="Settings" size="280" className="mx-auto mb-24 animate-spin-slow" />
-                                        <p className="text-[24px] font-black uppercase tracking-[2.5em]">Vault Is Empty</p>
-                                    </div>
-                                ) : (
-                                    history.map(t => (
-                                        <div key={t.uuid} className="panel-glass p-16 rounded-[6rem] flex justify-between items-center group hover:scale-[1.03] active:scale-95 transition-all duration-700 relative overflow-hidden shadow-2xl">
-                                            <div className="flex items-center gap-16 relative z-10">
-                                                <div className={`w-36 h-36 rounded-[4rem] flex items-center justify-center transition-all group-hover:rotate-12 ${t.mode === 'cred' ? 'bg-orange-500 text-black' : (t.type === 'in' ? 'bg-emerald-500 text-black' : 'bg-white/5 text-white opacity-40')}`}>
-                                                    <OmniIcon name={t.cat} size="84" />
-                                                </div>
-                                                <div className="space-y-8">
-                                                    <div className="flex items-center gap-8">
-                                                        <span className="text-[12px] font-black accent-text uppercase tracking-widest bg-white/5 px-8 py-3 rounded-full border border-white/5 font-mono">{t.uuid}</span>
-                                                        <span className="text-[12px] font-black opacity-15 uppercase tracking-widest">{t.meta.time}</span>
-                                                    </div>
-                                                    <p className="text-6xl font-black uppercase tracking-tighter leading-none group-hover:accent-text transition-colors">{t.label}</p>
-                                                    <div className="flex items-center gap-10 opacity-40">
-                                                        <span className="text-[16px] font-black uppercase tracking-[0.6em]">{t.meta.date}</span>
-                                                        <div className="w-4 h-4 rounded-full accent-bg animate-pulse"></div>
-                                                        <span className="text-[16px] font-black uppercase tracking-[0.6em]">{t.meta.day}</span>
-                                                    </div>
-                                                </div>
+                                            <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                                                <div className={`h-full transition-all duration-[1.5s] ${perc > 90 ? 'bg-red-500 shadow-[0_0_8px_red]' : 'accent-bg'}`} style={{ width: `${perc}%` }}></div>
                                             </div>
-                                            <div className="text-right relative z-10 pr-12">
-                                                <span className={`text-8xl font-black italic leading-none ${t.type === 'in' ? 'text-emerald-400' : 'text-white'}`}>
-                                                    {t.type === 'in' ? '+' : '-'} R$ {t.val.toLocaleString('pt-BR', {minimumFractionDigits:2})}
-                                                </span>
-                                                <div className={`h-4 w-48 ml-auto mt-12 rounded-full transition-all duration-1000 ${t.type === 'in' ? 'bg-emerald-500 shadow-[0_0_50px_#10b981]' : 'accent-bg glow-effect'} opacity-0 group-hover:opacity-100`}></div>
-                                            </div>
-                                            <div className="absolute inset-0 bg-gradient-to-r from-white/[0.05] to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                                         </div>
-                                    ))
-                                )}
+                                    );
+                                })}
                             </div>
                         </div>
                     )}
 
-                    {view === 'config' && (
-                        <div className="space-y-40 boot-sequence">
-                            {/* AJUSTES VISUAIS DO NÚCLEO */}
-                            <section className="panel-glass p-28 rounded-[7rem] space-y-24 shadow-2xl border-pulse">
-                                <div className="flex items-center gap-12 border-b border-white/5 pb-20">
-                                    <div className="p-10 rounded-[3.5rem] accent-bg text-white glow-effect"><OmniIcon name="Settings" size="56" /></div>
-                                    <h3 className="text-5xl font-black uppercase tracking-[0.8em] italic">Omni-Interface</h3>
-                                </div>
-                                <div className="grid grid-cols-2 gap-14">
+                    {tab === 'history' && (
+                        <div className="space-y-3 animate-in">
+                            <h2 className="text-[10px] font-black opacity-30 uppercase tracking-[0.5em] px-2 mb-4">Database Logs</h2>
+                            {history.length === 0 ? (
+                                <div className="py-20 text-center opacity-10 font-black uppercase text-xs tracking-widest">Cofre Vazio</div>
+                            ) : (
+                                history.map(t => (
+                                    <div key={t.id} className="panel-glass p-4 rounded-[1.5rem] flex justify-between items-center group border-l-2 border-white/5">
+                                        <div className="flex items-center gap-4">
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${t.type === 'in' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-white/5 text-white opacity-40'}`}>
+                                                <Icon name={t.cat === 'Alimentação' ? 'Food' : t.cat === 'Transporte' ? 'Transport' : 'Fun'} className="w-4 h-4" />
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] font-black uppercase tracking-widest leading-none mb-1">{t.desc}</p>
+                                                <p className="text-[8px] opacity-20 font-mono uppercase">{t.date} • {t.time}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <div className={`text-xs font-display font-bold ${t.type === 'in' ? 'text-emerald-500' : 'white'}`}>
+                                                {t.type === 'in' ? '+' : '-'} R$ {t.val.toFixed(2)}
+                                            </div>
+                                            <button onClick={() => deleteEntry(t.id)} className="opacity-0 group-hover:opacity-20 hover:!opacity-100 transition-opacity">
+                                                <Icon name="Trash" className="w-4 h-4 text-red-500" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    )}
+
+                    {tab === 'config' && (
+                        <div className="space-y-6 animate-in">
+                            <section className="panel-glass p-6 rounded-[2rem] space-y-5">
+                                <h3 className="text-[9px] font-black opacity-30 uppercase tracking-[0.4em]">Visual Core</h3>
+                                <div className="grid grid-cols-2 gap-2">
                                     {[
-                                        {id:'theme-default', n:'Cobalt Singularity', c:'border-blue-500'},
-                                        {id:'theme-emerald', n:'Emerald Forest', c:'border-emerald-500'},
-                                        {id:'theme-ruby', n:'Extraction Red', c:'border-rose-600'},
-                                        {id:'theme-amber', n:'Solar Amber', c:'border-amber-500'},
-                                        {id:'theme-violet', n:'Violet Void', c:'border-violet-500'},
-                                        {id:'theme-monochrome', n:'White Singularity', c:'border-white'}
+                                        {id:'theme-default', n:'Cobalt', c:'bg-blue-600'},
+                                        {id:'theme-emerald', n:'Emerald', c:'bg-emerald-500'},
+                                        {id:'theme-ruby', n:'Ruby', c:'bg-rose-600'},
+                                        {id:'theme-amber', n:'Amber', c:'bg-amber-500'}
                                     ].map(t => (
-                                        <button 
-                                            key={t.id} onClick={()=>setActiveTheme(t.id)} 
-                                            className={`p-20 btn-action border-2 ${activeTheme === t.id ? t.c + ' bg-white/10 glow-effect scale-105' : 'border-white/5 opacity-20 hover:opacity-100'} text-[18px] font-black transition-all`}
-                                        >
-                                            {t.n}
+                                        <button key={t.id} onClick={() => setTheme(t.id)} className={`p-3 rounded-xl flex items-center gap-3 border transition-all ${theme === t.id ? 'border-white/40 bg-white/5' : 'border-white/5 opacity-40'}`}>
+                                            <div className={`w-3 h-3 rounded-full ${t.c} shadow-sm`}></div>
+                                            <span className="text-[9px] font-black uppercase tracking-widest">{t.n}</span>
                                         </button>
                                     ))}
                                 </div>
                             </section>
 
-                            {/* PARÂMETROS OPERACIONAIS DO COFRE */}
-                            <section className="panel-glass p-28 rounded-[7rem] space-y-28 shadow-2xl">
-                                <div className="flex justify-between items-center mb-24">
-                                    <h3 className="text-5xl font-black uppercase tracking-[0.8em] italic">Vault Calibrator</h3>
-                                    <div className="px-12 py-5 bg-white/5 rounded-full border border-white/5">
-                                        <span className="text-[14px] font-black opacity-30 uppercase tracking-[1em] font-mono">Kernel v9.0.4-L</span>
-                                    </div>
-                                </div>
-                                
-                                <div className="space-y-14">
-                                    {Object.keys(quotas).map(c => (
-                                        <div key={c} className="flex justify-between items-center group bg-white/[0.03] p-16 rounded-[4.5rem] border border-white/5 hover:border-white/20 transition-all shadow-inner">
-                                            <div className="flex items-center gap-14 opacity-30 group-hover:opacity-100 transition-opacity">
-                                                <OmniIcon name={c} size="56" />
-                                                <span className="text-3xl uppercase font-black tracking-[0.6em]">{c}</span>
-                                            </div>
-                                            <div className="flex items-center gap-12">
-                                                <span className="text-4xl font-black opacity-10 font-mono">R$</span>
-                                                <input 
-                                                    type="number" value={quotas[c]} 
-                                                    onChange={e => setQuotas({...quotas, [c]: parseFloat(e.target.value) || 0})}
-                                                    className="bg-transparent text-right text-6xl font-black w-96 outline-none accent-text font-display"
-                                                />
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                <div className="pt-28 border-t border-white/5 mt-28 space-y-20">
-                                    <div className="flex justify-between items-center bg-orange-500/[0.05] p-24 rounded-[6rem] border-4 border-orange-500/10 group hover:border-orange-500/40 transition-all shadow-2xl">
-                                        <div className="flex items-center gap-16 text-orange-500">
-                                            <OmniIcon name="Card" size="100" />
-                                            <span className="text-4xl uppercase font-black tracking-[0.4em] italic leading-none">Master Credit Line</span>
-                                        </div>
+                            <section className="panel-glass p-6 rounded-[2rem] space-y-4">
+                                <h3 className="text-[9px] font-black opacity-30 uppercase tracking-[0.4em]">Quota Calibration</h3>
+                                {Object.keys(quotas).map(c => (
+                                    <div key={c} className="flex justify-between items-center bg-white/5 p-3 px-4 rounded-xl">
+                                        <span className="text-[9px] font-black uppercase opacity-50 tracking-widest">{c}</span>
                                         <input 
-                                            type="number" value={masterCredit} 
-                                            onChange={e => setMasterCredit(parseFloat(e.target.value) || 0)}
-                                            className="bg-transparent text-right text-[8rem] font-black w-[500px] text-orange-500 outline-none leading-none font-display"
+                                            type="number" value={quotas[c]} 
+                                            onChange={e => setQuotas({...quotas, [c]: parseFloat(e.target.value) || 0})}
+                                            className="bg-transparent text-right font-mono text-xs outline-none accent-text w-20 font-bold"
                                         />
                                     </div>
-                                </div>
+                                ))}
                             </section>
-                            
-                            <button 
-                                onClick={() => { if(confirm("SENHOR, ESTA AÇÃO IRÁ EXTERMINAR TODOS OS REGISTROS DO NÚCLEO. DESEJA PROCEDER?")) { localStorage.clear(); location.reload(); } }}
-                                className="w-full py-24 rounded-[8rem] border-8 border-rose-500/10 text-rose-500 text-[24px] font-black uppercase tracking-[2em] hover:bg-rose-500/10 hover:border-rose-500 transition-all shadow-2xl mt-16"
-                            >
-                                PURGAR MEMÓRIA CENTRAL
-                            </button>
+
+                            <button onClick={() => { if(confirm("ESTA AÇÃO É IRREVERSÍVEL. PURGAR SISTEMA?")) { localStorage.clear(); location.reload(); } }} className="w-full py-4 rounded-2xl border border-red-500/10 text-red-500/40 text-[9px] font-black uppercase tracking-[0.5em] hover:bg-red-500/5 hover:text-red-500 transition-all">Format Memory Core</button>
                         </div>
                     )}
 
-                    {/* CONSOLE DE NAVEGAÇÃO SUPREMA (COMMAND CENTER 9.0) */}
-                    <nav className="fixed bottom-20 left-20 right-20 panel-glass rounded-[10rem] p-16 flex justify-around items-center shadow-[0_100px_250px_-50px_rgba(0,0,0,1)] z-[9999] border-t-2 border-white/10 ring-[20px] ring-white/[0.01] backdrop-blur-[100px]">
-                        <button onClick={()=>setView('history')} className={`flex-1 flex flex-col items-center gap-8 transition-all duration-[1s] ${view==='history'?'accent-text scale-125 glow-effect':'opacity-15 hover:opacity-60 hover:scale-110'}`}>
-                            <OmniIcon name="History" size="64" />
-                            <span className="text-[14px] font-black uppercase tracking-[0.6em]">Audit</span>
+                    {/* DOCK DE NAVEGAÇÃO REFINADO (ÍCONES EM ESCALA) */}
+                    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-sm panel-glass rounded-[2.5rem] p-2 px-6 flex justify-between items-center shadow-2xl z-50 border-t-white/10 ring-8 ring-black/20">
+                        <button onClick={() => setTab('history')} className={`relative p-3 transition-all ${tab === 'history' ? 'nav-item-active' : 'opacity-20'}`}>
+                            <Icon name="History" className="w-6 h-6" />
                         </button>
                         
-                        <button onClick={()=>setView('home')} className={`flex-[4] flex justify-center py-20 btn-action transition-all duration-[1.5s] ${view==='home'?'accent-bg text-white glow-effect scale-110 -translate-y-32 shadow-[0_50px_100px_rgba(0,102,255,0.4)]':'opacity-15 text-white hover:opacity-60'}`}>
-                            <OmniIcon name="Home" size="100" />
-                            {view === 'home' && (
-                                <div className="absolute inset-0 bg-white/20 animate-pulse rounded-[curve-master]"></div>
-                            )}
+                        <button onClick={() => setTab('home')} className={`p-4 accent-bg rounded-full transition-all shadow-xl -translate-y-6 scale-110 ${tab === 'home' ? 'text-white' : 'opacity-20 text-white'}`}>
+                            <Icon name="Home" className="w-7 h-7" />
                         </button>
                         
-                        <button onClick={()=>setView('config')} className={`flex-1 flex flex-col items-center gap-8 transition-all duration-[1s] ${view==='config'?'accent-text scale-125 glow-effect':'opacity-15 hover:opacity-60 hover:scale-110'}`}>
-                            <OmniIcon name="Settings" size="64" />
-                            <span className="text-[14px] font-black uppercase tracking-[0.6em]">Core</span>
+                        <button onClick={() => setTab('config')} className={`relative p-3 transition-all ${tab === 'config' ? 'nav-item-active' : 'opacity-20'}`}>
+                            <Icon name="Settings" className="w-6 h-6" />
                         </button>
                     </nav>
                 </div>
             );
         }
 
-        // --- INICIALIZAÇÃO DO NÚCLEO ARQUITETURAL V9.0 ---
-        const root = ReactDOM.createRoot(document.getElementById('spark-root'));
+        const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
 </body>
