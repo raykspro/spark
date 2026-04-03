@@ -22,13 +22,11 @@
         .spark-gradient { background: linear-gradient(135deg, #0066FF 0%, #00F0FF 100%); }
         .btn-active:active { transform: scale(0.92); filter: brightness(1.2); }
         .tab-transition { animation: slideUp 0.3s ease-out; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-        .spark-scrollbar::-webkit-scrollbar { height: 4px; }
-        .spark-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,102,255,0.3); border-radius: 10px; }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-spark-dark text-slate-900 dark:text-slate-100 min-h-screen pb-10 select-none">
+<body class="bg-slate-50 dark:bg-spark-dark text-slate-900 dark:text-slate-100 min-h-screen pb-32 select-none overflow-x-hidden">
     <div id="root"></div>
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
@@ -43,6 +41,7 @@
                 Investimento: <path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 17.08l1.5 1.41z" />,
                 Receita: <path d="M13 10V3L4 14h7v7l9-11h-7z" />,
                 Parcela: <path d="M7 11h2v2H7v-2zm14-5v14c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2h1V2h2v2h8V2h2v2h1c1.1 0 2 .9 2 2zM5 8h14V6H5v2zm14 12V10H5v10h14zm-4-7h2v-2h-2v2zm-4 0h2v-2h-2v2z" />,
+                Dashboard: <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />,
                 Geral: <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
             };
             return <svg className={className} viewBox="0 0 24 24" fill="currentColor">{icones[nome] || icones.Geral}</svg>;
@@ -59,7 +58,7 @@
             const [nota, setNota] = useState('');
             const [parcelas, setParcelas] = useState(1);
             const [busca, setBusca] = useState('');
-            const [filtroTempo, setFiltroTempo] = useState('tudo');
+            const [filtroTempo, setFiltroTempo] = useState('mes');
 
             useEffect(() => {
                 const root = window.document.documentElement;
@@ -83,36 +82,37 @@
                 setValor(''); setNota(''); setParcelas(1);
             };
 
-            const exportar = () => {
-                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ transacoes, metas }));
-                const downloadAnchorNode = document.createElement('a'); downloadAnchorNode.setAttribute("href", dataStr);
-                downloadAnchorNode.setAttribute("download", `spark_backup.json`); downloadAnchorNode.click();
-            };
-
-            const importar = (e) => {
-                const reader = new FileReader();
-                reader.onload = (ev) => { const json = JSON.parse(ev.target.result); setTransacoes(json.transacoes); setMetas(json.metas); alert("Restaurado, Senhor."); };
-                reader.readAsText(e.target.files[0]);
-            };
-
             const filtradas = useMemo(() => {
                 let f = transacoes;
-                const hoje = new Date(); hoje.setHours(0,0,0,0);
-                if (filtroTempo === 'hoje') f = f.filter(t => t.timestamp >= hoje.getTime() && t.timestamp < hoje.getTime() + 86400000);
-                else if (filtroTempo === 'mes') f = f.filter(t => new Date(t.timestamp).getMonth() === hoje.getMonth());
+                const hoje = new Date();
+                if (filtroTempo === 'hoje') f = f.filter(t => new Date(t.timestamp).toDateString() === hoje.toDateString());
+                else if (filtroTempo === 'mes') f = f.filter(t => new Date(t.timestamp).getMonth() === hoje.getMonth() && new Date(t.timestamp).getFullYear() === hoje.getFullYear());
                 if (busca) f = f.filter(t => t.nota.toLowerCase().includes(busca.toLowerCase()));
                 return f.sort((a,b) => b.timestamp - a.timestamp);
             }, [transacoes, busca, filtroTempo]);
 
-            const saldo = transacoes.reduce((acc, t) => t.timestamp > Date.now() ? acc : (t.tipo === 'entrada' ? acc + t.valor : (t.metodo !== 'Crédito' ? acc - t.valor : acc)), 0);
-            const totalGasto = filtradas.reduce((acc, t) => t.tipo === 'saida' ? acc + t.valor : acc, 0);
+            const stats = useMemo(() => {
+                const totalEntradas = filtradas.filter(t => t.tipo === 'entrada').reduce((acc, t) => acc + t.valor, 0);
+                const totalSaidas = filtradas.filter(t => t.tipo === 'saida').reduce((acc, t) => acc + t.valor, 0);
+                const porCategoria = {};
+                filtradas.filter(t => t.tipo === 'saida').forEach(t => {
+                    porCategoria[t.categoria] = (porCategoria[t.categoria] || 0) + t.valor;
+                });
+                return { totalEntradas, totalSaidas, porCategoria, balanco: totalEntradas - totalSaidas };
+            }, [filtradas]);
+
+            const saldoReal = transacoes.reduce((acc, t) => t.timestamp > Date.now() ? acc : (t.tipo === 'entrada' ? acc + t.valor : (t.metodo !== 'Crédito' ? acc - t.valor : acc)), 0);
 
             return (
-                <div className="p-4 max-w-2xl mx-auto pb-28">
-                    <div className="flex justify-between items-center mb-8 pt-4 px-2">
+                <div className="p-4 max-w-2xl mx-auto">
+                    {/* Header Minimalista */}
+                    <div className="flex justify-between items-center mb-6 pt-4 px-2">
                         <div className="flex gap-4 items-center">
                             <div className="w-10 h-10 bg-spark-blue rounded-2xl flex items-center justify-center font-black italic text-white shadow-lg text-xl">S</div>
-                            <div><p className="text-[8px] opacity-40 uppercase font-black tracking-widest">Saldo Real</p><p className="text-xl font-black italic text-spark-green">R$ {saldo.toLocaleString('pt-BR')}</p></div>
+                            <div>
+                                <p className="text-[8px] opacity-40 uppercase font-black tracking-widest leading-none">Capital Disponível</p>
+                                <p className="text-xl font-black italic text-spark-green">R$ {saldoReal.toLocaleString('pt-BR')}</p>
+                            </div>
                         </div>
                         <div className="flex gap-2">
                             <button onClick={() => setIsDark(!isDark)} className="glass p-3 rounded-2xl btn-active">{isDark ? '☀️' : '🌙'}</button>
@@ -120,22 +120,23 @@
                         </div>
                     </div>
 
-                    {aba === 'home' ? (
+                    {/* Conteúdo por Aba */}
+                    {aba === 'home' && (
                         <div className="tab-transition">
                             <div className="glass rounded-[3rem] p-10 mb-8 border-none text-center shadow-xl">
-                                <h3 className="text-spark-blue text-[10px] font-black uppercase tracking-widest mb-1 italic opacity-60">Consumo ({filtroTempo})</h3>
-                                <p className="text-5xl font-black italic tracking-tighter mb-6">R$ {totalGasto.toLocaleString('pt-BR')}</p>
+                                <h3 className="text-spark-blue text-[10px] font-black uppercase tracking-widest mb-1 italic opacity-60">Gastos no Mês</h3>
+                                <p className="text-5xl font-black italic tracking-tighter mb-6">R$ {stats.totalSaidas.toLocaleString('pt-BR')}</p>
                                 <div className="h-3 w-full bg-slate-200 dark:bg-white/10 rounded-full p-[2px] overflow-hidden">
-                                    <div className="h-full spark-gradient rounded-full" style={{ width: `${Math.min((totalGasto/metas.Geral)*100),100}%` }}></div>
+                                    <div className="h-full spark-gradient rounded-full" style={{ width: `${Math.min((stats.totalSaidas/metas.Geral)*100),100}%` }}></div>
                                 </div>
                             </div>
 
                             <div className="glass rounded-[2.5rem] p-8 mb-8 border-none shadow-2xl">
-                                <input type="number" inputMode="decimal" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="0.00" className="w-full bg-transparent text-center text-7xl font-black outline-none mb-4 tracking-tighter placeholder:opacity-5"/>
-                                <input type="text" value={nota} onChange={(e) => setNota(e.target.value)} placeholder="O que o Senhor comprou?" className="w-full bg-slate-100 dark:bg-white/5 rounded-2xl p-4 mb-6 text-center text-sm font-bold outline-none"/>
+                                <input type="number" inputMode="decimal" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="0.00" className="w-full bg-transparent text-center text-7xl font-black outline-none mb-4 tracking-tighter placeholder:opacity-10"/>
+                                <input type="text" value={nota} onChange={(e) => setNota(e.target.value)} placeholder="O que o Senhor operou?" className="w-full bg-slate-100 dark:bg-white/5 rounded-2xl p-4 mb-6 text-center text-sm font-bold outline-none"/>
                                 
                                 <div className="flex justify-center items-center gap-4 mb-8">
-                                    <span className="text-[10px] font-black uppercase opacity-40">Parcelas:</span>
+                                    <span className="text-[10px] font-black uppercase opacity-40 italic">Parcelas:</span>
                                     <div className="flex items-center gap-3 bg-slate-100 dark:bg-white/5 p-2 rounded-2xl">
                                         <button onClick={() => setParcelas(Math.max(1, parcelas-1))} className="w-8 h-8 flex items-center justify-center font-bold btn-active">-</button>
                                         <span className="font-black text-spark-blue w-6 text-center">{parcelas}x</span>
@@ -150,13 +151,13 @@
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
-                                    <button onClick={() => lancar('saida')} className="bg-spark-blue text-white py-6 rounded-3xl font-black uppercase text-xs btn-active shadow-xl">Gasto</button>
-                                    <button onClick={() => lancar('entrada')} className="border-2 border-spark-green text-spark-green py-6 rounded-3xl font-black uppercase text-xs btn-active">Entrada</button>
+                                    <button onClick={() => lancar('saida')} className="bg-spark-blue text-white py-6 rounded-3xl font-black uppercase text-xs btn-active shadow-xl">Debitar</button>
+                                    <button onClick={() => lancar('entrada')} className="border-2 border-spark-green text-spark-green py-6 rounded-3xl font-black uppercase text-xs btn-active">Aportar</button>
                                 </div>
                             </div>
 
                             <div className="mb-6 space-y-4">
-                                <input type="text" placeholder="Filtrar..." value={busca} onChange={(e) => setBusca(e.target.value)} className="w-full glass rounded-2xl py-4 px-6 text-xs font-bold outline-none"/>
+                                <input type="text" placeholder="Pesquisar..." value={busca} onChange={(e) => setBusca(e.target.value)} className="w-full glass rounded-2xl py-4 px-6 text-xs font-bold outline-none"/>
                                 <div className="flex gap-2">
                                     {['tudo', 'hoje', 'mes'].map(f => (
                                         <button key={f} onClick={() => setFiltroTempo(f)} className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase btn-active ${filtroTempo === f ? 'bg-spark-blue text-white shadow-md' : 'glass opacity-40'}`}>{f}</button>
@@ -182,27 +183,80 @@
                                 ))}
                             </div>
                         </div>
-                    ) : (
+                    )}
+
+                    {aba === 'stats' && (
+                        <div className="tab-transition space-y-6">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="glass p-6 rounded-[2.5rem] text-center border-none">
+                                    <p className="text-[8px] font-black uppercase opacity-40 mb-1">Entradas</p>
+                                    <p className="text-xl font-black text-spark-green italic">R$ {stats.totalEntradas.toLocaleString('pt-BR')}</p>
+                                </div>
+                                <div className="glass p-6 rounded-[2.5rem] text-center border-none">
+                                    <p className="text-[8px] font-black uppercase opacity-40 mb-1">Saídas</p>
+                                    <p className="text-xl font-black text-spark-blue italic">R$ {stats.totalSaidas.toLocaleString('pt-BR')}</p>
+                                </div>
+                            </div>
+
+                            <div className="glass p-8 rounded-[3rem] border-none">
+                                <h3 className="text-[10px] font-black uppercase tracking-widest mb-8 italic opacity-60">Consumo por Setor</h3>
+                                <div className="space-y-6">
+                                    {Object.entries(stats.porCategoria).sort((a,b) => b[1] - a[1]).map(([cat, val]) => (
+                                        <div key={cat}>
+                                            <div className="flex justify-between text-[10px] font-black uppercase mb-2">
+                                                <span>{cat}</span>
+                                                <span className="opacity-40">R$ {val.toLocaleString('pt-BR')}</span>
+                                            </div>
+                                            <div className="h-2 w-full bg-slate-200 dark:bg-white/5 rounded-full overflow-hidden">
+                                                <div className="h-full bg-spark-blue rounded-full" style={{ width: `${(val/stats.totalSaidas)*100}%` }}></div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {Object.keys(stats.porCategoria).length === 0 && <p className="text-center py-10 opacity-20 italic text-sm">Nenhum dado analítico no período.</p>}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {aba === 'config' && (
                         <div className="tab-transition space-y-8">
                              <section className="space-y-3">
-                                <h2 className="text-xl font-black uppercase italic text-slate-500 mb-6">Metas Operacionais</h2>
+                                <h2 className="text-xl font-black uppercase italic text-slate-500 mb-6">Metas de Operação</h2>
                                 {Object.keys(metas).map(cat => (
                                     <div key={cat} className="glass p-6 rounded-[2rem] flex justify-between items-center">
-                                        <span className="font-black text-[10px] uppercase opacity-40">{cat}</span>
+                                        <span className="font-black text-[10px] uppercase opacity-40 italic">{cat}</span>
                                         <input type="number" value={metas[cat]} onChange={(e) => setMetas({...metas, [cat]: parseFloat(e.target.value) || 0})} className="bg-transparent text-right font-black text-spark-blue outline-none w-24 text-lg"/>
                                     </div>
                                 ))}
                              </section>
                              <section className="space-y-3">
-                                <h2 className="text-xl font-black uppercase italic text-slate-500 mb-6">Cofre de Dados</h2>
+                                <h2 className="text-xl font-black uppercase italic text-slate-500 mb-6">Cofre do Sistema</h2>
                                 <div className="grid grid-cols-2 gap-3">
-                                    <button onClick={exportar} className="glass p-6 rounded-[2rem] flex flex-col items-center gap-2 btn-active">💾 <span className="text-[9px] font-black uppercase">Backup</span></button>
-                                    <label className="glass p-6 rounded-[2rem] flex flex-col items-center gap-2 btn-active cursor-pointer text-center">📥 <span className="text-[9px] font-black uppercase">Restaurar</span><input type="file" accept=".json" onChange={importar} className="hidden"/></label>
+                                    <button onClick={() => {
+                                        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ transacoes, metas }));
+                                        const a = document.createElement('a'); a.setAttribute("href", dataStr); a.setAttribute("download", `spark_backup.json`); a.click();
+                                    }} className="glass p-6 rounded-[2rem] flex flex-col items-center gap-2 btn-active">💾 <span className="text-[9px] font-black uppercase">Backup</span></button>
+                                    <label className="glass p-6 rounded-[2rem] flex flex-col items-center gap-2 btn-active cursor-pointer text-center">📥 <span className="text-[9px] font-black uppercase">Restaurar</span><input type="file" accept=".json" onChange={(e) => {
+                                        const reader = new FileReader(); reader.onload = (ev) => { const json = JSON.parse(ev.target.result); setTransacoes(json.transacoes); setMetas(json.metas); alert("Restaurado, Senhor."); }; reader.readAsText(e.target.files[0]);
+                                    }} className="hidden"/></label>
                                 </div>
                                 <button onClick={() => {if(confirm("Mestre, apagar tudo?")) setTransacoes([])}} className="w-full p-6 rounded-[2rem] bg-red-500/10 text-red-500 font-black uppercase text-[10px] btn-active">Zerar Histórico</button>
                              </section>
                         </div>
                     )}
+
+                    {/* Dock de Navegação Superior (Mestre) */}
+                    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md glass rounded-[2.5rem] p-2 flex justify-between items-center shadow-2xl z-50">
+                        <button onClick={() => setAba('home')} className={`flex-1 py-4 flex justify-center rounded-[2rem] ${aba === 'home' ? 'spark-gradient text-white shadow-lg shadow-spark-blue/30' : 'opacity-40'}`}>
+                            <Icone nome="Geral" />
+                        </button>
+                        <button onClick={() => setAba('stats')} className={`flex-1 py-4 flex justify-center rounded-[2rem] ${aba === 'stats' ? 'spark-gradient text-white shadow-lg shadow-spark-blue/30' : 'opacity-40'}`}>
+                            <Icone nome="Dashboard" />
+                        </button>
+                        <button onClick={() => setAba('config')} className={`flex-1 py-4 flex justify-center rounded-[2rem] ${aba === 'config' ? 'spark-gradient text-white shadow-lg shadow-spark-blue/30' : 'opacity-40'}`}>
+                            ⚙️
+                        </button>
+                    </div>
                 </div>
             );
         }
