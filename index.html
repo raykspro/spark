@@ -112,12 +112,15 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo, useCallback, useRef } = React;
+        const { useState, useEffect, useMemo, useCallback } = React;
 
         // --- COMPONENTE DE ÍCONES DINÂMICOS ---
         const Icon = ({ name, className, strokeWidth = 2.5 }) => {
-            const LucideIcon = lucide.icons[name];
-            return LucideIcon ? <LucideIcon className={className} strokeWidth={strokeWidth} /> : <lucide.icons.Zap className={className} />;
+            const LucideIcon = lucide.icons && lucide.icons[name];
+            const FallbackIcon = lucide.icons && lucide.icons.Zap;
+            if (LucideIcon) return <LucideIcon className={className} strokeWidth={strokeWidth} />;
+            if (FallbackIcon) return <FallbackIcon className={className} strokeWidth={strokeWidth} />;
+            return null;
         };
 
         // --- COMPONENTE DE BOTÃO MASTER ---
@@ -164,7 +167,7 @@
             const [password, setPassword] = useState('');
             const [isExporting, setIsExporting] = useState(false);
 
-        const [activeFilter, setActiveFilter] = useState('todos');
+            const [activeFilter, setActiveFilter] = useState('todos');
             const [showSuccessToast, setShowSuccessToast] = useState(false);
 
             // --- ESTADOS DE FORMULÁRIO DETALHADOS ---
@@ -212,6 +215,48 @@
                     mediaDiaria: (gastosRecentes / 30).toFixed(2)
                 };
             }, [transacoes, tetoGasto]);
+
+            const transacoesFiltradas = useMemo(
+                () => transacoes.filter(t => activeFilter === 'todos' || t.tipo === activeFilter),
+                [transacoes, activeFilter]
+            );
+
+            const exportPDF = useCallback(() => {
+                const jspdfNs = window.jspdf;
+                if (!jspdfNs || !jspdfNs.jsPDF) {
+                    alert('Biblioteca PDF não carregou. Verifique a conexão e recarregue a página.');
+                    return;
+                }
+                setIsExporting(true);
+                try {
+                    const { jsPDF } = jspdfNs;
+                    const doc = new jsPDF();
+                    const rows = transacoesFiltradas.map(t => [
+                        t.data,
+                        t.desc,
+                        t.tipo,
+                        t.categoria || 'GERAL',
+                        'R$ ' + t.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+                    ]);
+                    doc.setFontSize(14);
+                    doc.text('SPARK OMNI VAULT — Auditoria', 14, 18);
+                    doc.setFontSize(9);
+                    doc.text('Filtro: ' + activeFilter.toUpperCase() + ' | ' + new Date().toLocaleString('pt-BR'), 14, 26);
+                    doc.autoTable({
+                        startY: 32,
+                        head: [['Data', 'Descrição', 'Tipo', 'Categoria', 'Valor']],
+                        body: rows.length ? rows : [['—', 'Nenhum registro', '—', '—', '—']],
+                        styles: { fontSize: 8 },
+                        headStyles: { fillColor: [59, 130, 246] }
+                    });
+                    doc.save('spark-vault-auditoria.pdf');
+                } catch (e) {
+                    console.error(e);
+                    alert('Erro ao gerar PDF.');
+                } finally {
+                    setIsExporting(false);
+                }
+            }, [transacoesFiltradas, activeFilter]);
 
             // --- GESTÃO DE TRANSAÇÕES ---
             const registrarMovimentacao = useCallback(() => {
@@ -306,17 +351,15 @@
             // --- RENDERIZAÇÃO DA INTERFACE MASTER ---
             return (
                 <div className="min-h-screen pb-48 select-none bg-master">
-                    {/* TOAST DE SUCESSO (FEEDBACK TÁTIL) */}
-                    <AnimatePresence>
-                        {showSuccessToast && (
-                            <div className="fixed top-12 left-1/2 -translate-x-1/2 z-[1000] animate-master">
-                                <div className="glass-active rounded-full py-4 px-8 border-green-500/30 flex items-center gap-3 shadow-2xl">
-                                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-green-500">Protocolo de Registro Concluído</span>
-                                </div>
+                    {/* TOAST DE SUCESSO (sem Framer Motion — AnimatePresence não estava incluído) */}
+                    {showSuccessToast && (
+                        <div className="fixed top-12 left-1/2 -translate-x-1/2 z-[1000] animate-master">
+                            <div className="glass-active rounded-full py-4 px-8 border-green-500/30 flex items-center gap-3 shadow-2xl">
+                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-green-500">Protocolo de Registro Concluído</span>
                             </div>
-                        )}
-                    </AnimatePresence>
+                        </div>
+                    )}
 
                     {/* HEADER DE STATUS DINÂMICO */}
                     <header className="p-8 md:p-12 flex items-center justify-between animate-master max-w-4xl mx-auto">
@@ -502,7 +545,8 @@
                                     <div className="flex gap-3">
                                         <button 
                                             onClick={exportPDF}
-                                            className="p-5 glass rounded-[1.5rem] accent-text hover:accent-bg hover:text-white transition-all shadow-xl"
+                                            disabled={isExporting}
+                                            className="p-5 glass rounded-[1.5rem] accent-text hover:accent-bg hover:text-white transition-all shadow-xl disabled:opacity-40"
                                         >
                                             <Icon name="FileDown" className="w-6 h-6" />
                                         </button>
@@ -524,15 +568,13 @@
 
                                 {/* LISTAGEM DE ALTA FIDELIDADE */}
                                 <div className="space-y-5">
-                                    {transacoes.filter(t => activeFilter === 'todos' || t.tipo === activeFilter).length === 0 ? (
+                                    {transacoesFiltradas.length === 0 ? (
                                         <div className="glass rounded-master py-32 text-center opacity-10 border-dashed border-2 border-white/20">
                                             <Icon name="DatabaseBackup" className="w-16 h-16 mx-auto mb-6 opacity-20" />
                                             <p className="text-[10px] font-black uppercase tracking-[0.5em]">Sem Registros no Vault</p>
                                         </div>
                                     ) : (
-                                        transacoes
-                                            .filter(t => activeFilter === 'todos' || t.tipo === activeFilter)
-                                            .map((t, idx) => (
+                                        transacoesFiltradas.map((t, idx) => (
                                                 <div 
                                                     key={t.id}
                                                     className="group glass rounded-spark p-6 flex items-center justify-between hover:glass-active transition-all duration-500 border-l-[6px]"
