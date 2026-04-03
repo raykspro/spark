@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SPARK - Fixed Control</title>
+    <title>SPARK - Mastery Core</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
@@ -24,11 +24,7 @@
         .tab-transition { animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* MANUTENÇÃO DA BARRA TRANSPARENTE - MESTRE */
-        .spark-scrollbar::-webkit-scrollbar { height: 3px; background: transparent; }
-        .spark-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .spark-scrollbar::-webkit-scrollbar-thumb { background: rgba(0, 102, 255, 0.4); border-radius: 10px; }
-        
+        .spark-scrollbar::-webkit-scrollbar { height: 0px; width: 0px; background: transparent; }
         input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     </style>
 </head>
@@ -37,19 +33,15 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
 
-        const Icone = ({ nome, className = "w-5 h-5" }) => {
+        const Icone = ({ nome, className = "w-6 h-6" }) => {
             const icones = {
-                Alimentação: <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />,
-                Lazer: <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />,
-                Fatura: <path d="M21 4H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-1 11h-4v-2h4v2zm1-5H3V6h18v4z" />,
-                Transporte: <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 10l1.5-4.5h11L19 10H5z" />,
-                Saúde: <path d="M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z" />,
-                Investimento: <path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 17.08l1.5 1.41z" />,
-                Fixa: <path d="M17 12h-5V7h5v5zm3.3-6.4C20.1 5.2 19.6 5 19 5H5c-.6 0-1.1.2-1.3.6L2.1 8.1c-.1.2-.1.4-.1.6v10.3c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8.7c0-.2 0-.4-.1-.6l-1.6-2.5z" />,
-                Dashboard: <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />,
-                Geral: <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+                History: <path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z" />,
+                Home: <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />,
+                Stats: <path d="M4 11h5V5H4v6zm0 7h5v-6H4v6zm6 0h5V5h-5v13zm6 0h5v-13h-5v13z" />,
+                Trash: <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />,
+                Alert: <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z" />
             };
-            return <svg className={className} viewBox="0 0 24 24" fill="currentColor">{icones[nome] || icones.Geral}</svg>;
+            return <svg className={className} viewBox="0 0 24 24" fill="currentColor">{icones[nome] || icones.Home}</svg>;
         };
 
         function App() {
@@ -57,22 +49,12 @@
             const [metas, setMetas] = useState(() => JSON.parse(localStorage.getItem('spark_metas')) || { Geral: 2000, Alimentação: 500, Lazer: 300, Fatura: 1000, Transporte: 200, Saúde: 200, Investimento: 500 });
             const [objetivos, setObjetivos] = useState(() => JSON.parse(localStorage.getItem('spark_objetivos')) || []);
             const [contasFixas, setContasFixas] = useState(() => JSON.parse(localStorage.getItem('spark_fixas')) || []);
-            const [isDark, setIsDark] = useState(() => localStorage.getItem('spark_theme') !== 'light');
             const [aba, setAba] = useState('home'); 
             const [valor, setValor] = useState('');
             const [categoria, setCategoria] = useState('Alimentação');
             const [nota, setNota] = useState('');
-            const [parcelas, setParcelas] = useState(1);
-
-            useEffect(() => {
-                const root = window.document.documentElement;
-                isDark ? root.classList.add('dark') : root.classList.remove('dark');
-                localStorage.setItem('spark_theme', isDark ? 'dark' : 'light');
-            }, [isDark]);
 
             useEffect(() => { localStorage.setItem('spark_db_v6', JSON.stringify(transacoes)); }, [transacoes]);
-            useEffect(() => { localStorage.setItem('spark_metas', JSON.stringify(metas)); }, [metas]);
-            useEffect(() => { localStorage.setItem('spark_objetivos', JSON.stringify(objetivos)); }, [objetivos]);
             useEffect(() => { localStorage.setItem('spark_fixas', JSON.stringify(contasFixas)); }, [contasFixas]);
 
             const lancar = (tipo, vOverride, catOverride, notaOverride) => {
@@ -80,100 +62,83 @@
                 if (!v) return;
                 const cat = catOverride || categoria;
                 const nt = notaOverride || nota;
-                
-                const valorNumerico = parseFloat(v);
-                const novas = [];
-                const valorParcela = valorNumerico / parcelas;
-                
-                for (let i = 0; i < parcelas; i++) {
-                    const d = new Date(); d.setMonth(d.getMonth() + i);
-                    novas.push({ id: Date.now() + i, valor: valorParcela, tipo, categoria: cat, metodo: parcelas > 1 ? 'Crédito' : 'Pix', nota: parcelas > 1 ? `${nt || 'Compra'} (${i + 1}/${parcelas})` : (nt || `Operação ${cat}`), timestamp: d.getTime(), data: d.toLocaleDateString('pt-BR') });
-                }
-                setTransacoes([...novas, ...transacoes]);
-                if(!vOverride) { setValor(''); setNota(''); setParcelas(1); }
+                const nova = { id: Date.now(), valor: parseFloat(v), tipo, categoria: cat, nota: nt || `Operação ${cat}`, timestamp: Date.now(), data: new Date().toLocaleDateString('pt-BR') };
+                setTransacoes([nova, ...transacoes]);
+                if(!vOverride) { setValor(''); setNota(''); }
+            };
+
+            const deletar = (id) => {
+                if(confirm("Deseja remover este registro, Senhor?")) setTransacoes(transacoes.filter(t => t.id !== id));
             };
 
             const stats = useMemo(() => {
                 const hoje = new Date();
-                const doMes = transacoes.filter(t => new Date(t.timestamp).getMonth() === hoje.getMonth() && new Date(t.timestamp).getFullYear() === hoje.getFullYear());
+                const doMes = transacoes.filter(t => new Date(t.timestamp).getMonth() === hoje.getMonth());
                 const totalSaidas = doMes.filter(t => t.tipo === 'saida').reduce((acc, t) => acc + t.valor, 0);
                 const porCategoria = {};
                 doMes.filter(t => t.tipo === 'saida').forEach(t => { porCategoria[t.categoria] = (porCategoria[t.categoria] || 0) + t.valor; });
                 return { totalSaidas, porCategoria };
             }, [transacoes]);
 
-            // Lógica de Contas Pendentes do Mestre
+            const sparkInsight = useMemo(() => {
+                const perc = (stats.totalSaidas / metas.Geral) * 100;
+                if (perc > 90) return "Mestre, o capital está no limite crítico. Recomendo cautela nas próximas operações.";
+                if (perc > 50) return "Operações estáveis, mas o consumo setorial de Lazer está acima da média.";
+                return "Excelente gestão, Senhor. O teto de gastos está preservado.";
+            }, [stats, metas]);
+
             const pendenciasFixas = useMemo(() => {
                 const hoje = new Date();
-                return contasFixas.filter(fixa => {
-                    const jaPaga = transacoes.some(t => 
-                        t.nota.includes(`[FIXA] ${fixa.nome}`) && 
-                        new Date(t.timestamp).getMonth() === hoje.getMonth() &&
-                        new Date(t.timestamp).getFullYear() === hoje.getFullYear()
-                    );
-                    return !jaPaga;
-                });
+                return contasFixas.filter(fixa => !transacoes.some(t => t.nota.includes(`[FIXA] ${fixa.nome}`) && new Date(t.timestamp).getMonth() === hoje.getMonth()));
             }, [contasFixas, transacoes]);
 
-            const saldoReal = transacoes.reduce((acc, t) => t.timestamp > Date.now() ? acc : (t.tipo === 'entrada' ? acc + t.valor : (t.metodo !== 'Crédito' ? acc - t.valor : acc)), 0);
+            const saldoReal = transacoes.reduce((acc, t) => t.tipo === 'entrada' ? acc + t.valor : acc - t.valor, 0);
 
             return (
                 <div className="p-4 max-w-2xl mx-auto">
-                    {/* Header Operacional */}
-                    <div className="flex justify-between items-center mb-6 pt-4 px-2">
+                    {/* Header Premium */}
+                    <div className="flex justify-between items-center mb-8 pt-4">
                         <div className="flex gap-4 items-center">
-                            <div className="w-10 h-10 bg-spark-blue rounded-2xl flex items-center justify-center font-black italic text-white shadow-lg text-xl">S</div>
+                            <div className="w-12 h-12 bg-spark-blue rounded-2xl flex items-center justify-center font-black italic text-white shadow-lg text-2xl">S</div>
                             <div>
-                                <p className="text-[8px] opacity-40 uppercase font-black tracking-widest leading-none">Capital Senhor</p>
-                                <p className="text-xl font-black italic text-spark-green">R$ {saldoReal.toLocaleString('pt-BR')}</p>
+                                <p className="text-[10px] opacity-40 uppercase font-black tracking-widest">Saldo do Mestre</p>
+                                <p className="text-2xl font-black italic text-spark-green">R$ {saldoReal.toLocaleString('pt-BR')}</p>
                             </div>
                         </div>
-                        <div className="flex gap-2">
-                            <button onClick={() => setIsDark(!isDark)} className="glass p-3 rounded-2xl btn-active">{isDark ? '☀️' : '🌙'}</button>
-                            <button onClick={() => setAba('config')} className={`p-3 rounded-2xl border btn-active ${aba === 'config' ? 'bg-spark-blue text-white' : 'glass opacity-60'}`}>⚙️</button>
-                        </div>
+                        <button onClick={() => setAba('config')} className="glass p-4 rounded-2xl btn-active opacity-60 text-xl">⚙️</button>
                     </div>
 
                     {aba === 'home' && (
                         <div className="tab-transition">
-                            {/* Widget de Pendências do Senhor */}
+                            {/* Widget de Contas Fixas (Se houver pendência) */}
                             {pendenciasFixas.length > 0 && (
-                                <div className="mb-8 overflow-x-auto flex gap-4 spark-scrollbar pb-2">
+                                <div className="mb-6 flex gap-4 overflow-x-auto pb-2 spark-scrollbar">
                                     {pendenciasFixas.map(conta => (
-                                        <div key={conta.id} className="glass p-4 rounded-3xl min-w-[200px] border-l-4 border-l-spark-gold shadow-md">
-                                            <p className="text-[8px] font-black uppercase opacity-40 mb-1">Pendente - Dia {conta.dia}</p>
-                                            <p className="text-sm font-black italic mb-2">{conta.nome}</p>
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-xs font-bold text-spark-blue">R$ {conta.valor}</span>
-                                                <button onClick={() => lancar('saida', conta.valor, conta.categoria, `[FIXA] ${conta.nome}`)} className="bg-spark-blue text-white text-[10px] px-3 py-1 rounded-full font-black uppercase btn-active italic">Pagar</button>
-                                            </div>
+                                        <div key={conta.id} className="glass p-5 rounded-[2rem] min-w-[220px] border-l-4 border-l-spark-gold">
+                                            <p className="text-[10px] font-black uppercase opacity-40 mb-1 italic">Vence dia {conta.dia}</p>
+                                            <p className="font-black mb-3">{conta.nome}</p>
+                                            <button onClick={() => lancar('saida', conta.valor, 'Fatura', `[FIXA] ${conta.nome}`)} className="w-full py-2 bg-spark-blue text-white rounded-xl text-[10px] font-black uppercase btn-active italic">Liquidado</button>
                                         </div>
                                     ))}
                                 </div>
                             )}
 
-                            <div className="glass rounded-[3rem] p-10 mb-8 border-none text-center shadow-xl">
-                                <h3 className="text-spark-blue text-[10px] font-black uppercase tracking-widest mb-1 italic opacity-60">Consumo Mensal</h3>
-                                <p className="text-5xl font-black italic tracking-tighter mb-6">R$ {stats.totalSaidas.toLocaleString('pt-BR')}</p>
-                                <div className="h-3 w-full bg-slate-200 dark:bg-white/10 rounded-full p-[2px] overflow-hidden">
+                            {/* Cartão de Consumo Principal */}
+                            <div className="glass rounded-[3rem] p-10 mb-8 text-center shadow-xl relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-full h-1 bg-white/5"></div>
+                                <h3 className="text-spark-blue text-[10px] font-black uppercase tracking-widest mb-2 italic opacity-60">Operações do Mês</h3>
+                                <p className="text-6xl font-black italic tracking-tighter mb-6">R$ {stats.totalSaidas.toLocaleString('pt-BR')}</p>
+                                <div className="h-3 w-full bg-slate-200 dark:bg-white/10 rounded-full p-[2px]">
                                     <div className="h-full spark-gradient rounded-full" style={{ width: `${Math.min((stats.totalSaidas/metas.Geral)*100, 100)}%` }}></div>
                                 </div>
                             </div>
 
-                            <div className="glass rounded-[2.5rem] p-8 mb-8 border-none shadow-2xl relative">
-                                <input type="number" inputMode="decimal" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="0.00" className="w-full bg-transparent text-center text-7xl font-black outline-none mb-4 tracking-tighter placeholder:opacity-10"/>
-                                <input type="text" value={nota} onChange={(e) => setNota(e.target.value)} placeholder="O que o Senhor operou?" className="w-full bg-slate-100 dark:bg-white/5 rounded-2xl p-4 mb-6 text-center text-sm font-bold outline-none"/>
+                            {/* Teclado de Lançamento */}
+                            <div className="glass rounded-[2.5rem] p-8 mb-8 shadow-2xl">
+                                <input type="number" inputMode="decimal" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="0.00" className="w-full bg-transparent text-center text-7xl font-black outline-none mb-4 tracking-tighter"/>
+                                <input type="text" value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Título da Operação..." className="w-full bg-slate-100 dark:bg-white/5 rounded-2xl p-4 mb-8 text-center text-sm font-bold outline-none"/>
                                 
-                                <div className="flex justify-center items-center gap-4 mb-8">
-                                    <span className="text-[10px] font-black uppercase opacity-40 italic">Parcelas:</span>
-                                    <div className="flex items-center gap-3 bg-slate-100 dark:bg-white/5 p-2 rounded-2xl">
-                                        <button onClick={() => setParcelas(Math.max(1, parcelas-1))} className="w-8 h-8 flex items-center justify-center font-bold btn-active">-</button>
-                                        <span className="font-black text-spark-blue w-6 text-center">{parcelas}x</span>
-                                        <button onClick={() => setParcelas(parcelas+1)} className="w-8 h-8 flex items-center justify-center font-bold btn-active">+</button>
-                                    </div>
-                                </div>
-
-                                <div className="flex gap-2 overflow-x-auto pb-4 mb-8 spark-scrollbar">
+                                <div className="flex gap-2 overflow-x-auto pb-6 mb-8 spark-scrollbar">
                                     {Object.keys(metas).filter(k => k !== 'Geral').map(cat => (
                                         <button key={cat} onClick={() => setCategoria(cat)} className={`px-6 py-4 rounded-2xl text-[10px] font-black uppercase flex-shrink-0 btn-active ${categoria === cat ? 'bg-spark-blue text-white shadow-lg' : 'bg-slate-100 dark:bg-white/5 opacity-40'}`}>{cat}</button>
                                     ))}
@@ -187,36 +152,52 @@
                         </div>
                     )}
 
+                    {aba === 'history' && (
+                        <div className="tab-transition space-y-4">
+                            <h2 className="text-xl font-black uppercase italic opacity-40 ml-4 mb-6">Extrato Detalhado</h2>
+                            {transacoes.map(t => (
+                                <div key={t.id} className="glass p-6 rounded-[2rem] flex justify-between items-center group">
+                                    <div className="flex gap-4 items-center">
+                                        <div className={`w-2 h-10 rounded-full ${t.tipo === 'entrada' ? 'bg-spark-green' : 'bg-red-500'}`}></div>
+                                        <div>
+                                            <p className="font-black text-sm italic">{t.nota}</p>
+                                            <p className="text-[10px] font-bold uppercase opacity-30">{t.data} • {t.categoria}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <p className={`font-black italic ${t.tipo === 'entrada' ? 'text-spark-green' : 'text-slate-400'}`}>
+                                            {t.tipo === 'entrada' ? '+' : '-'} {t.valor.toLocaleString('pt-BR')}
+                                        </p>
+                                        <button onClick={() => deletar(t.id)} className="opacity-0 group-hover:opacity-100 text-red-500"><Icone nome="Trash" className="w-5 h-5"/></button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
                     {aba === 'stats' && (
                         <div className="tab-transition space-y-6">
-                            <div className="glass p-8 rounded-[3rem] border-none shadow-xl">
-                                <div className="flex justify-between items-center mb-8">
-                                    <h3 className="text-[10px] font-black uppercase tracking-widest italic opacity-60">Objetivos Ativos</h3>
-                                    <button onClick={() => {
-                                        const nome = prompt("Nome do Objetivo:");
-                                        const alvo = parseFloat(prompt("Valor Alvo:"));
-                                        if(nome && alvo) setObjetivos([...objetivos, { nome, atual: 0, alvo }]);
-                                    }} className="bg-spark-blue/10 text-spark-blue px-4 py-2 rounded-xl text-[10px] font-black uppercase btn-active">+ Novo</button>
+                            {/* Relatório de IA - Spark Insight */}
+                            <div className="glass p-8 rounded-[3rem] border-none shadow-xl bg-gradient-to-br from-spark-blue/10 to-transparent">
+                                <div className="flex gap-3 items-center mb-4">
+                                    <Icone nome="Alert" className="text-spark-cyan w-5 h-5" />
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest italic opacity-60">Spark Insight</h3>
                                 </div>
-                                <div className="space-y-8">
-                                    {objetivos.map((obj, idx) => (
-                                        <div key={idx} className="group relative">
-                                            <div className="flex justify-between items-end mb-3">
-                                                <div>
-                                                    <p className="text-xs font-black uppercase mb-1 tracking-tight">{obj.nome}</p>
-                                                    <p className="text-[10px] opacity-40 font-bold">R$ {obj.atual.toLocaleString()} / R$ {obj.alvo.toLocaleString()}</p>
-                                                </div>
-                                                <button onClick={() => {
-                                                    const v = parseFloat(prompt(`Aportar quanto em ${obj.nome}?`));
-                                                    if(v) {
-                                                        const novos = [...objetivos];
-                                                        novos[idx].atual += v;
-                                                        setObjetivos(novos);
-                                                    }
-                                                }} className="w-8 h-8 rounded-full bg-spark-green text-white flex items-center justify-center text-sm btn-active">↑</button>
+                                <p className="text-sm font-bold leading-relaxed italic">"{sparkInsight}"</p>
+                            </div>
+
+                            {/* Dashboard Visual */}
+                            <div className="glass p-8 rounded-[3rem] shadow-xl">
+                                <h3 className="text-[10px] font-black uppercase tracking-widest mb-8 italic opacity-60">Análise de Fluxo</h3>
+                                <div className="space-y-6">
+                                    {Object.entries(stats.porCategoria).map(([cat, val]) => (
+                                        <div key={cat}>
+                                            <div className="flex justify-between text-[10px] font-black uppercase mb-2 italic">
+                                                <span>{cat}</span>
+                                                <span className="opacity-40">R$ {val.toLocaleString()}</span>
                                             </div>
-                                            <div className="h-4 w-full bg-slate-200 dark:bg-white/5 rounded-full p-[2px] overflow-hidden">
-                                                <div className="h-full bg-spark-green rounded-full" style={{ width: `${Math.min((obj.atual/obj.alvo)*100, 100)}%` }}></div>
+                                            <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                                                <div className="h-full bg-spark-blue rounded-full shadow-[0_0_10px_rgba(0,102,255,0.4)]" style={{ width: `${(val/stats.totalSaidas)*100}%` }}></div>
                                             </div>
                                         </div>
                                     ))}
@@ -228,45 +209,43 @@
                     {aba === 'config' && (
                         <div className="tab-transition space-y-6 pb-20">
                             <div className="flex justify-between items-center px-4">
-                                <h2 className="text-xl font-black uppercase italic text-slate-500">Contas Fixas</h2>
+                                <h2 className="text-xl font-black uppercase italic opacity-40">Contas Fixas</h2>
                                 <button onClick={() => {
-                                    const nome = prompt("Nome da Conta (ex: Aluguel):");
-                                    const valor = prompt("Valor Fixo:");
-                                    const dia = prompt("Dia do Vencimento (1-31):");
-                                    if(nome && valor && dia) setContasFixas([...contasFixas, { id: Date.now(), nome, valor, dia, categoria: 'Fatura' }]);
-                                }} className="bg-spark-blue text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase">Adicionar</button>
+                                    const nome = prompt("Nome da Conta:");
+                                    const valor = prompt("Valor:");
+                                    const dia = prompt("Dia (1-31):");
+                                    if(nome && valor && dia) setContasFixas([...contasFixas, { id: Date.now(), nome, valor: parseFloat(valor), dia }]);
+                                }} className="bg-spark-blue text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase btn-active">Adicionar</button>
                             </div>
-                            
                             {contasFixas.map(fixa => (
-                                <div key={fixa.id} className="glass p-6 rounded-[2rem] flex justify-between items-center shadow-lg group">
+                                <div key={fixa.id} className="glass p-6 rounded-[2rem] flex justify-between items-center">
                                     <div>
-                                        <p className="font-black text-sm italic">{fixa.nome}</p>
-                                        <p className="text-[8px] font-bold uppercase opacity-40">Dia {fixa.dia} • R$ {fixa.valor}</p>
+                                        <p className="font-black italic">{fixa.nome}</p>
+                                        <p className="text-[10px] font-bold opacity-30">Todo dia {fixa.dia} • R$ {fixa.valor}</p>
                                     </div>
-                                    <button onClick={() => setContasFixas(contasFixas.filter(f => f.id !== fixa.id))} className="text-red-500 font-black text-xs opacity-0 group-hover:opacity-100">Excluir</button>
-                                </div>
-                            ))}
-
-                            <h2 className="text-xl font-black uppercase italic text-slate-500 ml-4 mt-10">Teto de Gastos</h2>
-                            {Object.keys(metas).map(cat => (
-                                <div key={cat} className="glass p-6 rounded-[2rem] flex justify-between items-center shadow-lg">
-                                    <span className="font-black text-[10px] uppercase opacity-40 italic">{cat}</span>
-                                    <input type="number" value={metas[cat]} onChange={(e) => setMetas({...metas, [cat]: parseFloat(e.target.value) || 0})} className="bg-transparent text-right font-black text-spark-blue outline-none w-24 text-lg"/>
+                                    <button onClick={() => setContasFixas(contasFixas.filter(f => f.id !== fixa.id))} className="text-red-500 font-black text-xs">Excluir</button>
                                 </div>
                             ))}
                         </div>
                     )}
 
-                    {/* Dock de Comando (Mestre) */}
-                    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-md glass rounded-[3rem] p-3 flex justify-between items-center shadow-2xl z-50 border border-white/5">
-                        <button onClick={() => setAba('home')} className={`flex-1 py-4 flex justify-center rounded-[2.5rem] ${aba === 'home' ? 'spark-gradient text-white shadow-xl' : 'opacity-30'}`}>
-                            <Icone nome="Geral" />
+                    {/* DOCK DE COMANDO CORRIGIDO (Mestre) */}
+                    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-sm glass rounded-[3rem] p-3 flex justify-between items-center shadow-2xl z-50 border border-white/10">
+                        {/* Ícone da Esquerda: Extrato */}
+                        <button onClick={() => setAba('history')} className={`flex-1 py-4 flex justify-center rounded-[2.5rem] ${aba === 'history' ? 'bg-spark-blue/20 text-spark-blue' : 'opacity-30'}`}>
+                            <Icone nome="History" />
                         </button>
-                        <button onClick={() => setAba('stats')} className={`flex-1 py-4 flex justify-center rounded-[2.5rem] ${aba === 'stats' ? 'spark-gradient text-white shadow-xl' : 'opacity-30'}`}>
-                            <Icone nome="Objetivo" />
-                        </button>
-                        <button onClick={() => setAba('home')} className="flex-1 py-4 flex justify-center opacity-30">
-                            <Icone nome="Dashboard" />
+                        
+                        {/* Ícone Central: Home (Lançamentos) */}
+                        <div className="flex-[1.5] px-2">
+                            <button onClick={() => setAba('home')} className={`w-full py-4 flex justify-center rounded-[2rem] shadow-lg ${aba === 'home' ? 'spark-gradient text-white' : 'glass opacity-60'}`}>
+                                <Icone nome="Home" />
+                            </button>
+                        </div>
+                        
+                        {/* Ícone da Direita: Stats (CORRIGIDO) */}
+                        <button onClick={() => setAba('stats')} className={`flex-1 py-4 flex justify-center rounded-[2.5rem] ${aba === 'stats' ? 'bg-spark-blue/20 text-spark-blue' : 'opacity-30'}`}>
+                            <Icone nome="Stats" />
                         </button>
                     </div>
                 </div>
