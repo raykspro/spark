@@ -3,160 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SPARK - OMNI VAULT v4.5 | MASTER EDITION</title>
+    <title>SPARK - OMNI VAULT v4.8 | MASTER RECOVERY</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <link id="main-font" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&family=Orbitron:wght@400;900&family=Crimson+Text:wght@400;700&display=swap" rel="stylesheet">
+    <link id="dynamic-font" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&family=Orbitron:wght@400;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
     
     <style>
         :root { 
-            --accent-color: #0066FF; 
-            --bg-deep: #020617; 
-            --bg-card: rgba(15, 23, 42, 0.6);
-            --text-main: #f1f5f9;
+            --accent: #0066FF; 
+            --bg-base: #010204; 
+            --glass: rgba(15, 20, 30, 0.7);
+            --border: rgba(255, 255, 255, 0.08);
         }
 
-        /* CONFIGURAÇÃO DE TEMAS DINÂMICOS */
-        .theme-cyber { --accent-color: #00f2ff; --bg-deep: #050505; font-family: 'Orbitron', sans-serif; }
-        .theme-blood { --accent-color: #ef4444; --bg-deep: #0f0202; font-family: 'Crimson Text', serif; }
-        .theme-forest { --accent-color: #10b981; --bg-deep: #06120e; font-family: 'Inter', sans-serif; }
-        .theme-gold { --accent-color: #f59e0b; --bg-deep: #0f0a02; font-family: 'Inter', sans-serif; }
-        .theme-classic { --accent-color: #0066FF; --bg-deep: #020617; font-family: 'Inter', sans-serif; }
+        /* TEMAS QUE ALTERAM FUNDO E ESTILO */
+        .theme-cyber { --accent: #00f2ff; --bg-base: #050505; font-family: 'Orbitron', sans-serif; }
+        .theme-blood { --accent: #ef4444; --bg-base: #0f0202; font-family: 'Inter', sans-serif; }
+        .theme-forest { --accent: #10b981; --bg-base: #06120e; font-family: 'JetBrains Mono', monospace; }
+        .theme-classic { --accent: #0066FF; --bg-base: #010204; font-family: 'Inter', sans-serif; }
 
-        * { 
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            -webkit-tap-highlight-color: transparent;
-            outline: none !important;
-        }
-
-        body { 
-            background-color: var(--bg-deep);
-            color: var(--text-main); 
-            margin: 0; 
-            min-height: 100vh; 
-            overflow-x: hidden;
-        }
-
-        /* GLASSMORPHISM UI - RESTAURADO */
-        .glass { 
-            backdrop-filter: blur(25px) saturate(210%);
-            background: var(--bg-card); 
-            border: 1px solid rgba(255, 255, 255, 0.08); 
-        }
-
-        .glass-dark {
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.03);
-        }
-
-        .accent-bg { background-color: var(--accent-color) !important; }
-        .accent-text { color: var(--accent-color) !important; }
-        .shadow-spark { box-shadow: 0 15px 45px -10px var(--accent-color); }
+        * { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg-base); color: #f1f5f9; overflow-x: hidden; min-height: 100vh; }
         
-        /* ANIMAÇÕES CINEMATOGRÁFICAS RESTAURADAS  */
-        @keyframes masterFadeIn { 
-            from { opacity: 0; transform: translateY(40px) scale(0.95); } 
-            to { opacity: 1; transform: translateY(0) scale(1); } 
-        }
-        .animate-master { animation: masterFadeIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-
-        /* SCROLLBAR INVISÍVEL [cite: 77] */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-        input::-webkit-outer-spin-button, 
-        input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .panel-glass { backdrop-filter: blur(25px); background: var(--glass); border: 1px solid var(--border); }
+        .accent-text { color: var(--accent); }
+        .accent-bg { background-color: var(--accent); }
+        .shadow-spark { box-shadow: 0 0 30px -10px var(--accent); }
+        
+        @keyframes masterFade { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-in { animation: masterFade 0.6s ease-out forwards; }
+        
+        .pin-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--accent); transition: all 0.2s; }
+        .pin-dot.active { background: var(--accent); box-shadow: 0 0 15px var(--accent); scale: 1.2; }
     </style>
 </head>
-<body class="theme-classic">
+<body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo, useRef } = React;
+        const { useState, useEffect, useMemo } = React;
 
-        // --- SISTEMA OMNI DE ÍCONES (COMPLETO) [cite: 88, 354] ---
         const Icon = ({ name, className = "w-6 h-6" }) => {
-            const paths = {
-                Home: <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>,
-                History: <path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>,
-                Settings: <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>,
-                Fingerprint: <path d="M17.81 4.47c-.08 0-.16-.02-.23-.06C15.66 3.42 14 3 12.01 3c-1.98 0-3.86.47-5.57 1.41-.24.13-.54.04-.67-.2-.13-.24-.04-.55.2-.67C7.82 2.51 9.84 2 12.01 2c2.12 0 3.99.47 6.03 1.56.24.13.33.44.2.68-.1.15-.26.23-.43.23zm3.1 3.53c-.21 0-.41-.13-.47-.33-.28-.93-.78-1.77-1.44-2.51-.16-.18-.15-.46.03-.62.18-.16.46-.15.62.03.75.84 1.31 1.79 1.63 2.84.07.26-.08.52-.34.59-.01 0-.02 0-.03 0z"/>,
-                PDF: <path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM9 9.5h1v-1H9v1z"/>,
-                Alimentação: <path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7z"/>,
-                Delete: <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>,
-                Lock: <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6z"/>
+            const icons = {
+                Home: "M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z",
+                History: "M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z",
+                Settings: "M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58z",
+                Audit: "M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z",
+                Fingerprint: "M17.81 4.47c-.08 0-.16-.02-.23-.06C15.66 3.42 14 3 12.01 3c-1.98 0-3.86.47-5.57 1.41-.24.13-.54.04-.67-.2-.13-.24-.04-.55.2-.67C7.82 2.51 9.84 2 12.01 2c2.12 0 3.99.47 6.03 1.56.24.13.33.44.2.68-.1.15-.26.23-.43.23zm3.1 3.53c-.21 0-.41-.13-.47-.33-.28-.93-.78-1.77-1.44-2.51-.16-.18-.15-.46.03-.62.18-.16.46-.15.62.03.75.84 1.31 1.79 1.63 2.84.07.26-.08.52-.34.59-.01 0-.02 0-.03 0z"
             };
-            return <svg className={className} viewBox="0 0 24 24" fill="currentColor">{paths[name] || <circle cx="12" cy="12" r="10" />}</svg>;
+            return (
+                <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+                    <path d={icons[name] || ""} />
+                </svg>
+            );
         };
 
-        // --- COMPONENTE AVATAR MASTER [cite: 95, 20] ---
-        const Avatar = ({ photo, name, size = "12" }) => (
-            <div className={`w-${size} h-${size} rounded-full accent-bg flex items-center justify-center border-2 border-white/20 shadow-spark overflow-hidden glass relative group cursor-pointer`}>
-                <img 
-                    src={photo || `https://ui-avatars.com/api/?name=${name}&background=0066FF&color=fff&bold=true&size=512`} 
-                    className="w-full h-full object-cover group-hover:scale-115 transition-all duration-500" 
-                    alt="Master"
-                />
-            </div>
-        );
-
-        // --- NÚCLEO DO SISTEMA OMNI VAULT ---
         function App() {
-            const [tab, setTab] = useState('home');
             const [isLocked, setIsLocked] = useState(true);
-            const [pin, setPin] = useState('');
-            const [theme, setTheme] = useState('theme-classic');
-            const [masterPhoto, setMasterPhoto] = useState(localStorage.getItem('spark_photo') || '');
+            const [pin, setPin] = useState("");
+            const [tab, setTab] = useState('home');
+            const [theme, setTheme] = useState(localStorage.getItem('spark_th') || 'theme-classic');
+            const [masterPhoto, setMasterPhoto] = useState(localStorage.getItem('spark_img') || '');
             const [transactions, setTransactions] = useState(JSON.parse(localStorage.getItem('spark_tx') || '[]'));
-
-            // Persistência de Dados 
-            useEffect(() => {
-                localStorage.setItem('spark_tx', JSON.stringify(transactions));
-            }, [transactions]);
+            const MASTER_PIN = "1234"; // Definição Padrão
 
             useEffect(() => {
                 document.body.className = theme;
+                localStorage.setItem('spark_th', theme);
             }, [theme]);
 
-            // SISTEMA DE AUDITORIA PDF (RESTAURADO) 
+            useEffect(() => {
+                if (pin.length === 4) {
+                    if (pin === MASTER_PIN) {
+                        setIsLocked(false);
+                        setPin("");
+                    } else {
+                        alert("ACESSO NEGADO, SENHOR.");
+                        setPin("");
+                    }
+                }
+            }, [pin]);
+
+            const stats = useMemo(() => {
+                return transactions.reduce((acc, t) => t.type === 'in' ? acc + t.val : acc - t.val, 0);
+            }, [transactions]);
+
             const exportPDF = () => {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
-                doc.setFillColor(2, 6, 23);
-                doc.rect(0, 0, 210, 297, 'F');
-                doc.setTextColor(255, 255, 255);
-                doc.setFontSize(22);
-                doc.text("SPARK AUDIT - MASTER EDITION", 20, 30);
-                
-                doc.setFontSize(10);
-                transactions.forEach((tx, i) => {
-                    const y = 50 + (i * 10);
-                    doc.text(`${tx.date} | ${tx.category} | R$ ${tx.value}`, 20, y);
+                const doc = new jspdf.jsPDF();
+                doc.setFontSize(22); doc.text("SPARK AUDIT REPORT", 20, 20);
+                doc.setFontSize(12); doc.text(`SALDO ATUAL: R$ ${stats.toFixed(2)}`, 20, 30);
+                transactions.forEach((t, i) => {
+                    doc.text(`${t.date} - ${t.desc}: R$ ${t.val.toFixed(2)}`, 20, 45 + (i * 8));
                 });
-                doc.save("Spark_Master_Audit.pdf");
+                doc.save('spark_report.pdf');
             };
 
-            // TELA DE BLOQUEIO (FINGERPRINT/PIN) 
             if (isLocked) {
                 return (
-                    <div className="fixed inset-0 glass-dark z-[100] flex flex-col items-center justify-center p-8 animate-master">
+                    <div className="fixed inset-0 flex flex-col items-center justify-center p-8 animate-in">
                         <div className="accent-text mb-8 animate-pulse">
-                            <Icon name="Fingerprint" className="w-24 h-24" />
+                            <Icon name="Fingerprint" className="w-20 h-20" />
                         </div>
-                        <h1 className="text-2xl font-black mb-12 tracking-widest uppercase">Vault Locked</h1>
-                        <div className="grid grid-cols-3 gap-6 mb-12">
-                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, "", 0, "X"].map((num, i) => (
-                                <button 
-                                    key={i} 
-                                    onClick={() => num === "X" ? setIsLocked(false) : setPin(prev => prev + num)}
-                                    className="w-16 h-16 rounded-full glass flex items-center justify-center text-xl font-bold hover:accent-bg"
-                                >
-                                    {num}
+                        <h2 className="text-sm font-black tracking-[0.5em] uppercase mb-12 opacity-50">Vault Locked</h2>
+                        <div className="flex gap-4 mb-16">
+                            {[1, 2, 3, 4].map((_, i) => (
+                                <div key={i} className={`pin-dot ${pin.length > i ? 'active' : ''}`}></div>
+                            ))}
+                        </div>
+                        <div className="grid grid-cols-3 gap-6">
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, "C", 0, "OK"].map((n) => (
+                                <button key={n} onClick={() => {
+                                    if (n === "C") setPin("");
+                                    else if (n === "OK") return;
+                                    else if (pin.length < 4) setPin(p => p + n);
+                                }} className="w-16 h-16 rounded-full panel-glass text-xl font-bold hover:accent-bg transition-all">
+                                    {n}
                                 </button>
                             ))}
                         </div>
@@ -165,58 +130,70 @@
             }
 
             return (
-                <div className="flex flex-col min-h-screen p-6 animate-master">
-                    {/* Header Omni Vault */}
-                    <header className="flex justify-between items-center mb-10">
-                        <div onClick={() => setIsLocked(true)} className="cursor-pointer group">
-                            <h1 className="text-3xl font-black tracking-tighter opacity-50 uppercase group-hover:opacity-100">Spark Vault</h1>
-                            <p className="accent-text font-bold text-xs tracking-widest uppercase">Mestre Online</p>
+                <div className="min-h-screen p-6 pb-32 max-w-lg mx-auto animate-in">
+                    <header className="flex justify-between items-center mb-12">
+                        <div>
+                            <h1 className="text-3xl font-black accent-text tracking-tighter">SPARK</h1>
+                            <p className="text-[10px] font-bold opacity-30 tracking-widest uppercase">Master Control v4.8</p>
                         </div>
-                        <Avatar photo={masterPhoto} name="Mestre" size="14" />
+                        <div className="relative group">
+                            <div className="w-14 h-14 rounded-full border-2 border-white/10 p-1 overflow-hidden shadow-spark">
+                                <img src={masterPhoto || 'https://via.placeholder.com/150'} className="w-full h-full object-cover rounded-full grayscale group-hover:grayscale-0" />
+                            </div>
+                            <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={e => {
+                                const r = new FileReader(); r.onload = () => { setMasterPhoto(r.result); localStorage.setItem('spark_img', r.result); }; r.readAsDataURL(e.target.files[0]);
+                            }} />
+                        </div>
                     </header>
 
-                    {/* Conteúdo Principal Dinâmico */}
-                    <main className="flex-1 space-y-8 no-scrollbar overflow-y-auto">
-                        {tab === 'home' && (
-                            <div className="space-y-8">
-                                <div className="glass p-10 rounded-[3rem] shadow-spark border-l-4 accent-border relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 w-32 h-32 accent-bg opacity-10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
-                                    <span className="text-xs font-bold opacity-40 uppercase tracking-[0.3em]">Capital Total</span>
-                                    <h2 className="text-5xl font-black mt-2 tracking-tight">R$ 14.500,00</h2>
-                                </div>
-
-                                {/* Seletor de Temas (Integrado e Estilizado) */}
-                                <div className="grid grid-cols-2 gap-4">
-                                    <button onClick={() => setTheme('theme-cyber')} className="glass p-6 rounded-3xl border-b-4 border-cyan-500 text-xs font-black tracking-tighter">CYBER-GRID</button>
-                                    <button onClick={() => setTheme('theme-blood')} className="glass p-6 rounded-3xl border-b-4 border-red-600 text-xs font-black tracking-tighter">BLOOD-VAULT</button>
-                                    <button onClick={() => setTheme('theme-forest')} className="glass p-6 rounded-3xl border-b-4 border-emerald-500 text-xs font-black tracking-tighter">ECO-STRAT</button>
-                                    <button onClick={() => setTheme('theme-gold')} className="glass p-6 rounded-3xl border-b-4 border-amber-500 text-xs font-black tracking-tighter">GOLD-RESERVE</button>
-                                </div>
-
-                                <button onClick={exportPDF} className="w-full glass p-6 rounded-[2.5rem] flex items-center justify-between group hover:accent-bg hover:text-white">
-                                    <span className="font-bold tracking-widest uppercase text-sm">Gerar Relatório Master (PDF)</span>
-                                    <Icon name="PDF" className="w-8 h-8 group-hover:scale-125" />
-                                </button>
+                    {tab === 'home' && (
+                        <div className="space-y-8">
+                            <div className="panel-glass p-10 rounded-[2.5rem] text-center shadow-spark relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-32 h-32 accent-bg opacity-5 rounded-full -mr-16 -mt-16 blur-3xl"></div>
+                                <p className="text-[10px] font-black opacity-30 uppercase tracking-[0.4em] mb-2">Patrimônio Consolidado</p>
+                                <h2 className="text-5xl font-black tracking-tighter">R$ {stats.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h2>
                             </div>
-                        )}
-                    </main>
 
-                    {/* Navegação Master [cite: 354, 88] */}
-                    <nav className="fixed bottom-10 left-6 right-6 glass p-2 rounded-[4rem] flex justify-between items-center shadow-2xl z-50">
-                        <button onClick={() => setTab('history')} className={`p-6 rounded-full transition-all ${tab === 'history' ? 'accent-text bg-white/5' : 'opacity-20 hover:opacity-100'}`}>
-                            <Icon name="History" className="w-7 h-7" />
+                            <div className="grid grid-cols-2 gap-4">
+                                <button onClick={() => setTheme('theme-cyber')} className="panel-glass p-6 rounded-3xl text-xs font-black tracking-widest border-b-2 border-cyan-400">CYBER</button>
+                                <button onClick={() => setTheme('theme-blood')} className="panel-glass p-6 rounded-3xl text-xs font-black tracking-widest border-b-2 border-red-500">BLOOD</button>
+                                <button onClick={() => setTheme('theme-forest')} className="panel-glass p-6 rounded-3xl text-xs font-black tracking-widest border-b-2 border-emerald-500">FOREST</button>
+                                <button onClick={() => setTheme('theme-classic')} className="panel-glass p-6 rounded-3xl text-xs font-black tracking-widest border-b-2 border-blue-600">CLASSIC</button>
+                            </div>
+
+                            <button onClick={exportPDF} className="w-full panel-glass p-6 rounded-[2rem] flex justify-between items-center group hover:accent-bg">
+                                <span className="font-black text-xs uppercase tracking-widest">Extrair Relatório PDF</span>
+                                <Icon name="Audit" className="w-6 h-6 group-hover:scale-125" />
+                            </button>
+                        </div>
+                    )}
+
+                    {tab === 'history' && (
+                        <div className="space-y-4">
+                            <h2 className="text-[10px] font-black opacity-30 uppercase tracking-widest mb-6 px-2">Histórico de Transações</h2>
+                            {transactions.map(t => (
+                                <div key={t.id} className="panel-glass p-5 rounded-3xl flex justify-between items-center">
+                                    <div>
+                                        <p className="text-xs font-black uppercase tracking-widest">{t.desc}</p>
+                                        <p className="text-[9px] opacity-20 font-mono">{t.date}</p>
+                                    </div>
+                                    <p className={`font-black ${t.type === 'in' ? 'text-emerald-500' : 'text-white'}`}>
+                                        {t.type === 'in' ? '+' : '-'} R$ {t.val.toFixed(2)}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[90%] max-w-sm panel-glass rounded-[3rem] p-3 flex justify-around items-center shadow-2xl">
+                        <button onClick={() => setTab('history')} className={`p-4 rounded-full ${tab === 'history' ? 'accent-text bg-white/5' : 'opacity-20'}`}>
+                            <Icon name="History" />
                         </button>
-                        
-                        <button 
-                            onClick={() => setTab('home')} 
-                            className={`p-8 rounded-full transition-all duration-700 -translate-y-4 shadow-spark ${tab === 'home' ? 'accent-bg text-white scale-110' : 'bg-white/5 opacity-40'}`}
-                        >
-                            <Icon name="Home" className="w-10 h-10" />
-                            {tab === 'home' && <span className="absolute top-2 right-2 w-4 h-4 bg-white rounded-full animate-ping"></span>}
+                        <button onClick={() => setTab('home')} className={`p-6 rounded-full accent-bg text-white shadow-spark -translate-y-6 scale-110`}>
+                            <Icon name="Home" className="w-8 h-8" />
                         </button>
-                        
-                        <button onClick={() => setTab('settings')} className={`p-6 rounded-full transition-all ${tab === 'settings' ? 'accent-text bg-white/5' : 'opacity-20 hover:opacity-100'}`}>
-                            <Icon name="Settings" className="w-7 h-7" />
+                        <button onClick={() => setIsLocked(true)} className={`p-4 rounded-full opacity-20`}>
+                            <Icon name="Fingerprint" />
                         </button>
                     </nav>
                 </div>
