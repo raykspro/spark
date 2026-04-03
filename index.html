@@ -112,68 +112,10 @@
                 const y = Math.sin(2 * Math.PI * percent);
                 return [x, y];
             };
-
-            const slices = Object.entries(data).map(([key, value]) => {
-                if (value <= 0) return null;
-                const percent = value / total;
-                const [startX, startY] = getCoordinatesForPercent(cumulativePercent);
-                cumulativePercent += percent;
-                const [endX, endY] = getCoordinatesForPercent(cumulativePercent);
-                const largeArcFlag = percent > 0.5 ? 1 : 0;
-                return (
-                    <path 
-                        key={key} 
-                        d={`M ${startX} ${startY} A 1 1 0 ${largeArcFlag} 1 ${endX} ${endY} L 0 0`} 
-                        fill={colors[key]} 
-                        className="hover:opacity-80 transition-opacity cursor-pointer"
-                    />
-                );
-            });
-
-            return (
-                <svg viewBox="-1 -1 2 2" className="w-full h-full -rotate-90 drop-shadow-2xl">
-                    {total === 0 ? (
-                        <circle cx="0" cy="0" r="0.9" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.1)" strokeWidth="0.05" />
-                    ) : (
-                        <>
-                            {slices}
-                            <circle cx="0" cy="0" r="0.7" fill="#020617" />
-                        </>
-                    )}
-                </svg>
-            );
-        };
-
-        // --- COMPONENTE DE AVATAR CUSTOMIZÁVEL ---
-        const Avatar = ({ photo, name, size = "12" }) => {
-            const [error, setError] = useState(false);
-            const fallback = `https://ui-avatars.com/api/?name=${name || 'M'}&background=0066FF&color=fff&bold=true`;
-            
-            return (
-                <div className={`w-${size} h-${size} rounded-full accent-bg flex items-center justify-center border-2 border-white/20 shadow-spark overflow-hidden glass relative group`}>
-                    <img 
-                        src={error || !photo ? fallback : photo} 
-                        className="w-full h-full object-cover transition-transform group-hover:scale-110" 
-                        onError={() => setError(true)} 
-                    />
-                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <div className="w-1 h-1 bg-white rounded-full animate-ping"></div>
-                    </div>
-                </div>
-            );
-        };
-
-        function App() {
-            // ESTADOS DE IDENTIDADE E SEGURANÇA
-            const [isLocked, setIsLocked] = useState(true);
-            const [pin, setPin] = useState('');
-            const [masterName, setMasterName] = useState(() => localStorage.getItem('spark_name') || 'MESTRE');
-            const [masterPhoto, setMasterPhoto] = useState(() => localStorage.getItem('spark_photo') || '');
-            const [accent, setAccent] = useState(() => localStorage.getItem('spark_accent') || '#0066FF');
-            
-            // ESTADOS DE NAVEGAÇÃO E DADOS
+// ESTADOS DE DADOS E METAS (V3.1 MASTER)
             const [tab, setTab] = useState('home');
             const [transacoes, setTransacoes] = useState(() => JSON.parse(localStorage.getItem('spark_data_v3')) || []);
+            const [tetoGasto, setTetoGasto] = useState(() => parseFloat(localStorage.getItem('spark_teto')) || 2500);
             const [logs, setLogs] = useState(() => JSON.parse(localStorage.getItem('spark_logs')) || []);
             
             // ESTADOS DE FORMULÁRIO
@@ -183,6 +125,69 @@
             const [busca, setBusca] = useState('');
             const [dataInicio, setDataInicio] = useState('');
             const [dataFim, setDataFim] = useState('');
+
+            const catColors = { 
+                Alimentação: "#FF6B6B", Lazer: "#4DABF7", Fatura: "#FAB005", 
+                Saúde: "#20C997", Transporte: "#BE4BDB", Investimento: "#51CF66" 
+            };
+
+            useEffect(() => {
+                localStorage.setItem('spark_data_v3', JSON.stringify(transacoes));
+                localStorage.setItem('spark_name', masterName);
+                localStorage.setItem('spark_photo', masterPhoto);
+                localStorage.setItem('spark_accent', accent);
+                localStorage.setItem('spark_teto', tetoGasto);
+                localStorage.setItem('spark_logs', JSON.stringify(logs));
+                document.documentElement.style.setProperty('--accent-color', accent);
+            }, [transacoes, masterName, masterPhoto, accent, logs, tetoGasto]);
+
+            const analytics = useMemo(() => {
+                const totalGanhos = transacoes.filter(t => t.tipo === 'entrada').reduce((acc, t) => acc + t.valor, 0);
+                const totalGastos = transacoes.filter(t => t.tipo === 'saida').reduce((acc, t) => acc + t.valor, 0);
+                const saldoAtual = totalGanhos - totalGastos;
+                
+                const distribuicao = { Alimentação: 0, Lazer: 0, Fatura: 0, Saúde: 0, Transporte: 0, Investimento: 0 };
+                transacoes.filter(t => t.tipo === 'saida').forEach(t => { 
+                    if(distribuicao[t.categoria] !== undefined) distribuicao[t.categoria] += t.valor; 
+                });
+
+                return { totalGanhos, totalGastos, saldoAtual, distribuicao, progressoTeto: (totalGastos / tetoGasto) * 100 };
+            }, [transacoes, tetoGasto]);
+
+            // FUNÇÕES DE BACKUP MASTER (JSON)
+            const exportarDadosJSON = () => {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(transacoes));
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `SPARK_BACKUP_${masterName}.json`);
+                downloadAnchor.click();
+            };
+
+            const importarDadosJSON = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const parsed = JSON.parse(event.target.result);
+                        setTransacoes(parsed);
+                        alert("Banco de Dados Sincronizado, Senhor.");
+                    } catch (err) { alert("Erro no arquivo JSON."); }
+                };
+                reader.readAsText(file);
+            };
+
+            const registrarTransacao = (tipo) => {
+                if (!valor || parseFloat(valor) <= 0) return;
+                const novaTransacao = {
+                    id: `TX-${Date.now()}`, ts: Date.now(), valor: parseFloat(valor), tipo, categoria,
+                    nota: nota || (tipo === 'entrada' ? 'Ganho Master' : 'Gasto Master'),
+                    data: new Date().toLocaleDateString('pt-BR'),
+                    hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                };
+                setTransacoes([novaTransacao, ...transacoes]);
+                setValor(''); setNota('');
+            };
 
             // DEFINIÇÕES ESTÉTICAS
             const catColors = { 
@@ -242,72 +247,65 @@
                 };
 
                 const novoLog = {
-                    id: Date.now(),
-                    msg: `${tipo.toUpperCase()}: R$ ${valor} em ${categoria}`,
-                    ts: new Date().toLocaleTimeString()
-                };
+          {tab === 'home' && (
+                        <div className="space-y-8 animate-master">
+                            {/* MONITOR DE TETO DE GASTOS */}
+                            <div className="glass p-6 rounded-[2.5rem] border border-white/5 space-y-4">
+                                <div className="flex justify-between items-end px-2">
+                                    <div>
+                                        <p className="text-[8px] font-black opacity-30 uppercase tracking-[0.2em]">Limite Mensal</p>
+                                        <p className="text-sm font-bold">R$ {tetoGasto.toFixed(2)}</p>
+                                    </div>
+                                    <p className={`text-xs font-black italic ${analytics.progressoTeto > 90 ? 'text-rose-500 animate-pulse' : 'accent-text'}`}>
+                                        {analytics.progressoTeto.toFixed(1)}%
+                                    </p>
+                                </div>
+                                <div className="w-full h-3 bg-white/5 rounded-full overflow-hidden border border-white/5 shadow-inner">
+                                    <div 
+                                        className="h-full transition-all duration-1000 accent-bg" 
+                                        style={{ 
+                                            width: `${Math.min(analytics.progressoTeto, 100)}%`,
+                                            filter: analytics.progressoTeto > 100 ? 'hue-rotate(-50deg) brightness(1.5)' : 'none'
+                                        }}
+                                    ></div>
+                                </div>
+                                <p className="text-[7px] text-center font-black opacity-20 uppercase tracking-widest">
+                                    {analytics.totalGastos > tetoGasto ? "LIMITE EXCEDIDO, MESTRE" : `DISPONÍVEL: R$ ${(tetoGasto - analytics.totalGastos).toFixed(2)}`}
+                                </p>
+                            </div>
 
-                setTransacoes([novaTransacao, ...transacoes]);
-                setLogs([novoLog, ...logs].slice(0, 50));
-                setValor('');
-                setNota('');
-                
-                // Feedback tátil visual via trigger de animação (simulado)
-            };
+                            <div className="glass p-8 rounded-[3.5rem] flex items-center justify-between shadow-2xl relative overflow-hidden">
+                                <div className="chart-container z-10"><PieChart data={analytics.distribuicao} colors={catColors} /></div>
+                                <div className="text-right z-10">
+                                    <p className="text-[9px] font-black opacity-40 uppercase tracking-widest mb-2">Total de Gastos</p>
+                                    <h3 className="text-2xl font-black italic text-rose-500">R$ {analytics.totalGastos.toFixed(2)}</h3>
+                                </div>
+                                <div className="absolute top-0 right-0 w-32 h-32 accent-bg opacity-5 blur-[80px]"></div>
+                            </div>
 
-            const removerTransacao = (id) => {
-                if(confirm("Senhor, confirma a exclusão permanente deste registro?")) {
-                    setTransacoes(transacoes.filter(t => t.id !== id));
-                }
-            };
-// --- SISTEMA DE RELATÓRIO MASTER ---
-            const gerarRelatorioPDF = () => {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
-                
-                // Configuração Visual do PDF
-                doc.setFillColor(2, 6, 23);
-                doc.rect(0, 0, 210, 297, 'F');
-                
-                doc.setTextColor(accent);
-                doc.setFontSize(28);
-                doc.text("SPARK OMNI VAULT", 20, 40);
-                
-                doc.setTextColor(255, 255, 255);
-                doc.setFontSize(10);
-                doc.text(`RELATÓRIO DE AUDITORIA - MESTRE: ${masterName.toUpperCase()}`, 20, 50);
-                doc.text(`DATA DE EMISSÃO: ${new Date().toLocaleString()}`, 20, 55);
-                
-                doc.setDrawColor(accent);
-                doc.line(20, 65, 190, 65);
+                            <div className="glass rounded-[4rem] p-10 space-y-10 shadow-spark/10 border-t border-white/10">
+                                <div className="text-center relative">
+                                    <span className="absolute -left-2 top-0 text-2xl font-black opacity-20 accent-text">R$</span>
+                                    <input type="number" placeholder="0,00" value={valor} onChange={e => setValor(e.target.value)} className="input-hidden-spin bg-transparent border-none outline-none text-center w-full text-7xl font-black accent-text placeholder:opacity-5 tracking-tighter" />
+                                    <input type="text" placeholder="DESCRIÇÃO MASTER..." value={nota} onChange={e => setNota(e.target.value)} className="bg-transparent border-none outline-none text-center w-full text-[10px] uppercase font-black opacity-30 mt-4 tracking-[0.2em]" />
+                                </div>
 
-                let y = 80;
-                doc.setFontSize(12);
-                doc.text("ÚLTIMOS LANÇAMENTOS (LIMITADO A 25):", 20, y);
-                y += 15;
+                                <div className="grid grid-cols-3 gap-4">
+                                    {Object.keys(catColors).map(cat => (
+                                        <button key={cat} onClick={() => setCategoria(cat)} className={`py-5 rounded-3xl flex flex-col items-center gap-3 transition-all border ${categoria === cat ? 'accent-bg text-white shadow-spark scale-105 border-transparent' : 'glass opacity-30 border-white/5'}`}>
+                                            <Icon name={cat} className="w-5 h-5" />
+                                            <span className="text-[8px] font-black uppercase tracking-tighter">{cat}</span>
+                                        </button>
+                                    ))}
+                                </div>
 
-                transacoesFiltradas.slice(0, 25).forEach((t, i) => {
-                    if (y > 270) { doc.addPage(); y = 20; }
-                    doc.setFontSize(9);
-                    const cor = t.tipo === 'entrada' ? [16, 185, 129] : [239, 68, 68];
-                    doc.setTextColor(cor[0], cor[1], cor[2]);
-                    doc.text(`[${t.data}]`, 20, y);
-                    doc.setTextColor(255, 255, 255);
-                    doc.text(`${t.categoria.toUpperCase()} - ${t.nota}`, 45, y);
-                    doc.setTextColor(cor[0], cor[1], cor[2]);
-                    doc.text(`${t.tipo === 'entrada' ? '+' : '-'} R$ ${t.valor.toFixed(2)}`, 160, y);
-                    y += 8;
-                });
-
-                doc.save(`Spark_Vault_${masterName}_Audit.pdf`);
-            };
-
-            // --- RENDERIZAÇÃO DA TELA DE BLOQUEIO ---
-            if (isLocked) {
-                return (
-                    <div className="h-screen flex flex-col items-center justify-center p-10 space-y-12 animate-master">
-                        <div className="relative">
-                            <Avatar photo={masterPhoto} name={masterName} size="40" />
+                                <div className="grid grid-cols-2 gap-5 pt-4">
+                                    <button onClick={() => registrarTransacao('saida')} className="py-7 rounded-[2.5rem] bg-rose-600 font-black uppercase text-[12px] tracking-widest shadow-lg active:scale-95">Gasto</button>
+                                    <button onClick={() => registrarTransacao('entrada')} className="py-7 rounded-[2.5rem] border-2 border-emerald-500 text-emerald-500 font-black uppercase text-[12px] tracking-widest active:scale-95">Ganho</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                             <div className="absolute -bottom-2 -right-2 w-8 h-8 accent-bg rounded-full flex items-center justify-center border-4 border-[#020617]">
                                 <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
                             </div>
@@ -397,18 +395,39 @@
                                 </div>
 
                                 {/* Seletor de Categorias Grid */}
-                                <div className="grid grid-cols-3 gap-4">
-                                    {Object.keys(catColors).map(cat => (
-                                        <button 
-                                            key={cat} 
-                                            onClick={() => setCategoria(cat)} 
-                                            className={`py-5 rounded-3xl flex flex-col items-center gap-3 transition-all border ${categoria === cat ? 'accent-bg text-white shadow-spark scale-105 border-transparent' : 'glass opacity-30 border-white/5'}`}
-                                        >
-                                            <Icon name={cat} className="w-5 h-5" />
-                                            <span className="text-[8px] font-black uppercase tracking-tighter">{cat}</span>
-                                        </button>
-                                    ))}
-                                </div>
+                              {tab === 'config' && (
+                        <div className="space-y-8 animate-master">
+                            <div className="glass p-10 rounded-[4rem] space-y-12 border-white/10">
+                                <section className="space-y-6">
+                                    <div className="flex items-center gap-4 mb-2"><div className="w-2 h-6 accent-bg rounded-full"></div><h3 className="text-[12px] font-black uppercase tracking-[0.3em]">Vault Master</h3></div>
+                                    <div className="space-y-2">
+                                        <p className="text-[9px] font-black opacity-30 uppercase ml-2">Definir Teto de Gastos (R$)</p>
+                                        <input type="number" value={tetoGasto} onChange={e=>setTetoGasto(parseFloat(e.target.value))} className="w-full glass p-5 rounded-2xl font-black text-sm outline-none accent-text focus:accent-border text-center" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-[9px] font-black opacity-30 uppercase ml-2">Identidade Visual (URL Foto)</p>
+                                        <input type="text" value={masterPhoto} placeholder="https://..." onChange={e=>setMasterPhoto(e.target.value)} className="w-full glass p-5 rounded-2xl font-black text-[10px] outline-none opacity-60" />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4 pt-4">
+                                        <button onClick={exportarDadosJSON} className="p-5 glass border border-white/5 rounded-3xl text-[9px] font-black uppercase tracking-widest hover:accent-text">Backup JSON</button>
+                                        <label className="p-5 glass border border-white/5 rounded-3xl text-[9px] font-black uppercase tracking-widest text-center cursor-pointer hover:accent-text">
+                                            Importar JSON
+                                            <input type="file" accept=".json" onChange={importarDadosJSON} className="hidden" />
+                                        </label>
+                                    </div>
+                                </section>
+
+                                <section className="space-y-6">
+                                    <div className="flex items-center gap-4 mb-2"><div className="w-2 h-6 accent-bg rounded-full"></div><h3 className="text-[12px] font-black uppercase tracking-[0.3em]">Cromatismo</h3></div>
+                                    <div className="flex justify-between p-4 glass rounded-3xl">
+                                        {['#0066FF', '#8B5CF6', '#EC4899', '#10B981', '#F59E0B', '#FFFFFF'].map(c => (
+                                            <button key={c} onClick={() => setAccent(c)} className={`w-10 h-10 rounded-full border-4 transition-transform ${accent === c ? 'border-white scale-125 shadow-spark' : 'border-transparent opacity-30 hover:opacity-100'}`} style={{backgroundColor: c}} />
+                                        ))}
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
+                    )}
 
                                 {/* Gatilhos de Execução */}
                                 <div className="grid grid-cols-2 gap-5 pt-4">
